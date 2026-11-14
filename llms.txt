@@ -75,13 +75,13 @@ The install does not register a handler and does not finish the native setup (iO
 
 ## Docs
 
-- [Installation](https://anilcancakir.com/magic_deeplink/docs/getting-started/installation.md): add the package, run the installer, register a handler and finish the native setup.
-- [Configuration](https://anilcancakir.com/magic_deeplink/docs/getting-started/configuration.md): the keys of `lib/config/deeplink.dart` and what reads each.
-- [Handlers](https://anilcancakir.com/magic_deeplink/docs/basics/handlers.md): the handler contract, `RouteDeeplinkHandler`, tenant switching, breadcrumb events, the push bridge and custom handlers.
-- [Drivers](https://anilcancakir.com/magic_deeplink/docs/basics/drivers.md): the driver contract, `AppLinksDriver` per platform, web in detail and custom drivers.
-- [CLI](https://anilcancakir.com/magic_deeplink/docs/basics/cli.md): `deeplink:install`, `deeplink:generate` and `deeplink:doctor`, the config merge and gotchas.
-- [DeeplinkManager](https://anilcancakir.com/magic_deeplink/docs/architecture/deeplink-manager.md): the singleton, the handler chain, `handleUri` and the cached initial link.
-- [Service Provider](https://anilcancakir.com/magic_deeplink/docs/architecture/service-provider.md): the boot lifecycle, stream wiring, the push bridge and teardown.
+- [Installation](https://anilcancakir.com/magic/docs/deeplink/getting-started/installation.md): add the package, run the installer, register a handler and finish the native setup.
+- [Configuration](https://anilcancakir.com/magic/docs/deeplink/getting-started/configuration.md): the keys of `lib/config/deeplink.dart` and what reads each.
+- [Handlers](https://anilcancakir.com/magic/docs/deeplink/basics/handlers.md): the handler contract, `RouteDeeplinkHandler`, tenant switching, breadcrumb events, the push bridge and custom handlers.
+- [Drivers](https://anilcancakir.com/magic/docs/deeplink/basics/drivers.md): the driver contract, `AppLinksDriver` per platform, web in detail and custom drivers.
+- [CLI](https://anilcancakir.com/magic/docs/deeplink/basics/cli.md): `deeplink:install`, `deeplink:generate` and `deeplink:doctor`, the config merge and gotchas.
+- [DeeplinkManager](https://anilcancakir.com/magic/docs/deeplink/architecture/deeplink-manager.md): the singleton, the handler chain, `handleUri` and the cached initial link.
+- [Service Provider](https://anilcancakir.com/magic/docs/deeplink/architecture/service-provider.md): the boot lifecycle, stream wiring, the push bridge and teardown.
 
 ## Links
 

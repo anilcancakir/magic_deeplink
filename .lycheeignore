@@ -12,8 +12,19 @@
 ^https://github\.com/anilcancakir/magic_deeplink/security/advisories/new
 
 # The package pages are published with the docs site; until then they answer 404.
-# Added 2026-11-13: remove this line once the docs site serves /magic_deeplink.
-^https://anilcancakir\.com/magic_deeplink(?:[/?#]|$)
+# Added 2026-11-15: remove these lines once the docs site serves /magic/deeplink
+# and /magic/docs/deeplink.
+^https://anilcancakir\.com/magic/deeplink(?:[/?#]|$)
+^https://anilcancakir\.com/magic/docs/deeplink(?:[/?#]|$)
+
+# The notifications and starter pages are published with the docs site; until then
+# they answer 404.
+# Added 2026-11-15: remove these lines once the docs site serves /magic/notifications,
+# /magic/docs/notifications, /magic/starter and /magic/docs/starter.
+^https://anilcancakir\.com/magic/notifications(?:[/?#]|$)
+^https://anilcancakir\.com/magic/docs/notifications(?:[/?#]|$)
+^https://anilcancakir\.com/magic/starter(?:[/?#]|$)
+^https://anilcancakir\.com/magic/docs/starter(?:[/?#]|$)
 
 # Placeholder hosts inside example code.
 ^https?://([a-z0-9-]+\.)*example\.com

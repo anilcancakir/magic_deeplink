@@ -18,7 +18,7 @@
 </p>
 
 <p align="center">
-  <a href="https://anilcancakir.com/magic_deeplink">Documentation</a> ·
+  <a href="https://anilcancakir.com/magic/docs/deeplink">Documentation</a> ·
   <a href="https://pub.dev/packages/magic_deeplink">pub.dev</a> ·
   <a href="https://github.com/anilcancakir/magic_deeplink/issues">Issues</a>
 </p>
@@ -49,7 +49,7 @@ The installer publishes `lib/config/deeplink.dart`, adds `DeeplinkServiceProvide
 - iOS: the Associated Domains capability with `applinks:<your-domain>`, and an `apple-app-site-association` file served from `https://<your-domain>/.well-known/`.
 - Android: an `autoVerify` intent filter with a `<data>` element for both `http` and `https`, the `flutter_deeplinking_enabled` meta-data set to `false` inside `<activity>` (not `<application>`), and an `assetlinks.json` file served from `https://<your-domain>/.well-known/`.
 
-`deeplink:doctor` reads your project files and says which of those is missing. The steps are in the [installation guide](https://anilcancakir.com/magic_deeplink/docs/getting-started/installation).
+`deeplink:doctor` reads your project files and says which of those is missing. The steps are in the [installation guide](https://anilcancakir.com/magic/docs/deeplink/getting-started/installation).
 
 ## Configuration
 
@@ -253,7 +253,7 @@ Rules for an agent writing code against this package. Each one is a mistake that
 
 ## Links
 
-- [Documentation](https://anilcancakir.com/magic_deeplink/docs/getting-started/installation): installation and platform setup, configuration, handlers, drivers, the manager, the provider and the CLI
+- [Documentation](https://anilcancakir.com/magic/docs/deeplink/getting-started/installation): installation and platform setup, configuration, handlers, drivers, the manager, the provider and the CLI
 - [API reference](https://pub.dev/documentation/magic_deeplink/latest/)
 - [llms.txt](llms.txt) and the [agent skill](skills/magic-deeplink/SKILL.md) for AI coding agents: `npx skills add anilcancakir/magic_deeplink`
 - [Changelog](CHANGELOG.md)
