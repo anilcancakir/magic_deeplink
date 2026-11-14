@@ -1,29 +1,34 @@
 # Configuration
 
-- [Introduction](#introduction)
+`magic_deeplink` is configured by one Dart file, `lib/config/deeplink.dart`, whose `deeplink` map drives the runtime provider, the association files and the doctor.
+
+- [Quick Reference](#quick-reference)
 - [The Deeplink Config File](#deeplink-config-file)
 - [Driver Selection](#driver-selection)
 - [iOS Configuration](#ios-configuration)
 - [Android Configuration](#android-configuration)
 - [Paths](#paths)
 - [Accessing Configuration Values](#accessing-configuration-values)
-- [CLI Generate Command](#cli-generate-command)
+- [Related Documentation](#related-documentation)
 
-<a name="introduction"></a>
-## Introduction
+<a name="quick-reference"></a>
+## Quick Reference
 
-The `magic_deeplink` plugin is configured via a single Dart file at `lib/config/deeplink.dart` in your consumer project. This file is generated automatically when you run the install command, and contains all values required for both runtime deep link handling and server-side asset file generation.
+| Key | Type | Read by |
+|:----|:-----|:--------|
+| `deeplink.enabled` | `bool` | `DeeplinkServiceProvider.boot()`. An absent key means enabled; only an explicit `false` wires nothing. |
+| `deeplink.driver` | `String` | `DeeplinkServiceProvider.boot()`. `'app_links'` is the only built-in driver. |
+| `deeplink.domain` | `String` | `deeplink:doctor` (entitlement host, intent filter host, `--remote` fetch). Your own handler's `hosts` can read it too. |
+| `deeplink.ios.team_id`, `deeplink.ios.bundle_id` | `String` | `deeplink:generate` and `deeplink:doctor`. |
+| `deeplink.android.package_name`, `deeplink.android.sha256_fingerprints` | `String`, `List<String>` | `deeplink:generate` and `deeplink:doctor`. |
+| `deeplink.paths` | `List<String>` | `deeplink:generate`, for the `components` of the `apple-app-site-association` file. |
 
-```bash
-dart run magic:dowel deeplink:install
-```
-
-The install command scaffolds `lib/config/deeplink.dart` with placeholder values. Replace the placeholders with your real credentials before running your app or generating server-side files.
+The install command scaffolds the file with placeholder values (`example.com`, `YOUR_TEAM_ID`, `com.example.app`, `YOUR_SHA256_FINGERPRINT`); the doctor reports any that are left.
 
 <a name="deeplink-config-file"></a>
 ## The Deeplink Config File
 
-The generated `lib/config/deeplink.dart` exports a single top-level getter that returns a nested `Map<String, dynamic>`:
+`lib/config/deeplink.dart` exports one top-level getter that returns a nested `Map<String, dynamic>`:
 
 ```dart
 Map<String, dynamic> get deeplinkConfig => {
@@ -31,7 +36,6 @@ Map<String, dynamic> get deeplinkConfig => {
     'enabled': true,
     'driver': 'app_links',
     'domain': 'example.com',
-    'scheme': 'https',
 
     'ios': {
       'team_id': 'YOUR_TEAM_ID',
@@ -52,59 +56,47 @@ Map<String, dynamic> get deeplinkConfig => {
 };
 ```
 
-Register it with `Magic.init()` alongside your other config factories:
+The stub the installer publishes also writes a `'scheme': 'https'` entry. Nothing in the package reads it, so you can delete it.
+
+`lib/main.dart` hands the getter to `Magic.init` as a factory:
 
 ```dart
 await Magic.init(
   configFactories: [
-    appConfig,
-    deeplinkConfig,
+    () => appConfig,
+    () => deeplinkConfig,
   ],
 );
 ```
 
 > [!NOTE]
-> All keys under `'deeplink'` are accessible at runtime via `Config.get('deeplink.<key>')` using dot notation. The `DeeplinkServiceProvider` reads from this namespace during the boot phase.
+> The `deeplink:generate` and `deeplink:doctor` commands read this file as text, with single-quoted string literals. See [CLI](../basics/cli.md#config-merge-strategy).
 
 <a name="driver-selection"></a>
 ## Driver Selection
 
-The `'driver'` key determines which platform abstraction is used to receive incoming links. Currently, only one driver is available:
+The `'driver'` key names the platform abstraction that receives incoming links:
 
-| Value | Package | Description |
-|-------|---------|-------------|
-| `'app_links'` | `app_links` | Universal Links (iOS) and App Links (Android) via the `app_links` package |
+| Value | Package | Platforms |
+|:------|:--------|:----------|
+| `'app_links'` | `app_links` | Android, iOS and macOS. Web, Windows and Linux report the driver as unsupported. |
 
-```dart
-'driver': 'app_links',
-```
-
-`DeeplinkServiceProvider.boot()` reads this value and instantiates the matching driver. If the value does not match a known driver, no driver is registered and deep links will not be handled. The provider goes on to check `driver.isSupported` before wiring anything further: on web, `AppLinksDriver.isSupported` is `false` (the browser has no Universal Link / App Link mechanism for it to wrap), so no driver is set on the manager and no link subscription is created there, even though `'driver': 'app_links'` is still the correct config value on every platform.
+`DeeplinkServiceProvider.boot()` creates `AppLinksDriver` for `'app_links'` and nothing for any other value, so a different name wires no driver and no link subscription. The provider then checks `driver.isSupported` before wiring further: on web, Windows and Linux no driver is set on the manager and no subscription is created, and `'driver': 'app_links'` stays the correct value on every platform. See [Drivers](../basics/drivers.md).
 
 > [!NOTE]
-> `'app_links'` is the only supported driver in the current release. Additional drivers can be contributed by implementing the `DeeplinkDriver` abstract class.
-
-> [!NOTE]
-> The `'enabled'` key gates all of this. `DeeplinkServiceProvider.boot()` returns immediately when `Config.get<bool>('deeplink.enabled') == false`; an absent key still means enabled. Setting `false` skips the driver, the link subscription, and the OneSignal push bridge entirely, regardless of the value of `'driver'`.
+> `'enabled'` gates all of this. `boot()` returns immediately when `Config.get<bool>('deeplink.enabled') == false`, which skips the driver, the link subscription and the push bridge regardless of `'driver'`.
 
 <a name="ios-configuration"></a>
 ## iOS Configuration
 
-iOS Universal Links require an `apple-app-site-association` (AASA) file hosted at your domain. The `ios` block provides the values needed to generate that file.
-
-```dart
-'ios': {
-  'team_id': 'ABCDE12345',
-  'bundle_id': 'com.example.app',
-},
-```
+iOS Universal Links need an `apple-app-site-association` (AASA) file hosted at your domain. The `ios` block holds the values the generator needs:
 
 | Key | Type | Description |
-|-----|------|-------------|
-| `team_id` | `String` | Your 10-character Apple Developer Team ID, found in the Apple Developer portal under Membership. |
-| `bundle_id` | `String` | The bundle identifier of your iOS app (e.g. `com.example.app`). Must match the value in `Runner.xcodeproj`. |
+|:----|:-----|:------------|
+| `team_id` | `String` | Your Apple Developer Team ID, from Membership in the Apple Developer portal. |
+| `bundle_id` | `String` | The bundle identifier of your iOS app, for example `com.example.app`. |
 
-The AASA the generator writes uses Apple's modern `appIDs` + `components` shape (TN3155), with each app identifier constructed as `TEAM_ID.BUNDLE_ID`. There is no `apps` key and no legacy `appID` + `paths` entry: Apple's own guidance warns that mixing the two schemas may produce unexpected behaviour for universal links.
+The generator writes Apple's `appIDs` plus `components` shape, with the app identifier built as `TEAM_ID.BUNDLE_ID` and one `components` entry per path. It never writes the legacy `appID` plus `paths` entry or an `apps` key: mixing the two schemas may produce unexpected behaviour for universal links, and the doctor warns when a file does.
 
 ```json
 {
@@ -113,10 +105,7 @@ The AASA the generator writes uses Apple's modern `appIDs` + `components` shape 
       {
         "appIDs": ["ABCDE12345.com.example.app"],
         "components": [
-          {
-            "/": "/*",
-            "comment": "Matches any URL whose path matches /*"
-          }
+          { "/": "/*", "comment": "Matches any URL whose path matches /*" }
         ]
       }
     ]
@@ -125,57 +114,38 @@ The AASA the generator writes uses Apple's modern `appIDs` + `components` shape 
 ```
 
 > [!NOTE]
-> The AASA file must be served over HTTPS at `https://<domain>/.well-known/apple-app-site-association` with `Content-Type: application/json` and no redirect. Apple's CDN caches this file aggressively, so allow up to 24 hours for updates to propagate.
+> Serve the file over HTTPS at `https://<domain>/.well-known/apple-app-site-association` with `Content-Type: application/json` and no redirect. `deeplink:doctor --remote` checks the status, that the body parses as JSON and the content type.
 
 <a name="android-configuration"></a>
 ## Android Configuration
 
-Android App Links require an `assetlinks.json` file hosted at your domain. The `android` block provides the values needed to generate that file.
-
-```dart
-'android': {
-  'package_name': 'com.example.app',
-  'sha256_fingerprints': [
-    'AA:BB:CC:DD:EE:FF:00:11:22:33:44:55:66:77:88:99:AA:BB:CC:DD:EE:FF:00:11:22:33:44:55:66:77:88:99',
-  ],
-},
-```
+Android App Links need an `assetlinks.json` file hosted at your domain. The `android` block holds the values the generator needs:
 
 | Key | Type | Description |
-|-----|------|-------------|
-| `package_name` | `String` | The Android application ID (e.g. `com.example.app`). Must match `applicationId` in `android/app/build.gradle`. |
-| `sha256_fingerprints` | `List<String>` | One or more SHA-256 certificate fingerprints. Include both your release and debug signing certificates during development. |
-
-To retrieve the SHA-256 fingerprint for your keystore:
+|:----|:-----|:------------|
+| `package_name` | `String` | The Android application ID, matching `applicationId` in `android/app/build.gradle`. |
+| `sha256_fingerprints` | `List<String>` | One or more SHA-256 certificate fingerprints. Include every signing configuration you ship with, such as debug and release. |
 
 ```bash
 keytool -list -v -keystore ~/.android/debug.keystore -alias androiddebugkey -storepass android -keypass android
 ```
 
-Each fingerprint produces a separate entry in `assetlinks.json`. Supply multiple fingerprints when you need to support several signing configurations (e.g. debug, release, CI):
+Each fingerprint produces its own entry in `assetlinks.json`:
 
 ```dart
 'sha256_fingerprints': [
-  'AA:BB:CC:...',  // debug keystore
-  'DD:EE:FF:...',  // release keystore
+  'AA:BB:CC:...', // debug keystore
+  'DD:EE:FF:...', // release keystore
 ],
 ```
 
 > [!NOTE]
-> The `assetlinks.json` file must be served at `https://<domain>/.well-known/assetlinks.json` with `Content-Type: application/json`. Android verifies this file at install time, not at link-click time.
+> Serve the file at `https://<domain>/.well-known/assetlinks.json` with `Content-Type: application/json`. Android verifies it at install time, not at link-click time.
 
 <a name="paths"></a>
 ## Paths
 
-The `paths` array controls which URL paths your app claims to handle. This value is used in both the iOS `apple-app-site-association` and to filter which URIs the runtime driver passes to your handlers.
-
-```dart
-'paths': [
-  '/*',
-],
-```
-
-The default `'/*'` matches all paths under your domain. You can restrict this to specific prefixes:
+`paths` is the list of URL path patterns written into the `components` of the iOS AASA file. It does not filter links at runtime: which paths your app routes is decided by the `paths` of the `RouteDeeplinkHandler` you register. See [Handlers](../basics/handlers.md#routedeeplinkhandler).
 
 ```dart
 'paths': [
@@ -186,81 +156,34 @@ The default `'/*'` matches all paths under your domain. You can restrict this to
 ```
 
 | Pattern | Matches |
-|---------|---------|
+|:--------|:--------|
 | `'/*'` | All paths |
 | `'/app/*'` | Any path starting with `/app/` |
-| `'/invite/*'` | Any path starting with `/invite/` |
-| `'/reset-password'` | Exact path `/reset-password` only |
+| `'/reset-password'` | Exactly `/reset-password` |
 
 > [!NOTE]
-> Android App Links use a different matching mechanism in `assetlinks.json`: the `assetlinks.json` grants your app permission for the entire domain. Path-level filtering on Android is handled by your intent filters in `AndroidManifest.xml`, not by the `paths` array here. The `paths` array in this config primarily drives the iOS AASA file and the CLI generate output.
+> `assetlinks.json` grants the app the whole domain and carries no paths. On Android the path filter is the intent filter in `AndroidManifest.xml`.
 
 <a name="accessing-configuration-values"></a>
 ## Accessing Configuration Values
 
-At runtime, all values are accessible via the `Config` facade using dot notation with the `deeplink` namespace:
+At runtime magic's `Config` facade reads every value with dot notation:
 
 ```dart
-// Check whether deep linking is enabled
-final enabled = Config.get<bool>('deeplink.enabled', true);
+import 'package:magic/magic.dart';
 
-// Get the active driver name
-final driver = Config.get<String>('deeplink.driver');
-
-// Get the domain
-final domain = Config.get<String>('deeplink.domain');
-
-// Get the iOS team ID
-final teamId = Config.get<String>('deeplink.ios.team_id');
-
-// Get the Android package name
-final packageName = Config.get<String>('deeplink.android.package_name');
+final bool enabled = Config.get<bool>('deeplink.enabled', true) ?? true;
+final String? domain = Config.get<String>('deeplink.domain');
+final String? teamId = Config.get<String>('deeplink.ios.team_id');
 ```
 
-The `DeeplinkServiceProvider` passes the entire `deeplink` map to the driver's `initialize()` method during `boot()`:
+`DeeplinkServiceProvider` passes the whole `deeplink` map to `driver.initialize()` during `boot()`. `AppLinksDriver` does not read it; a custom driver can.
 
-```dart
-await driver.initialize(config.get('deeplink') ?? {});
-```
+<a name="related-documentation"></a>
+## Related Documentation
 
-<a name="cli-generate-command"></a>
-## CLI Generate Command
-
-The `generate` command reads `lib/config/deeplink.dart` automatically and uses your config values to produce the server-side asset files. CLI flags override config file values when both are present.
-
-```bash
-dart run magic:dowel deeplink:generate --output ./public
-```
-
-This creates two files in the specified output directory:
-
-| File | Platform | Hosting path |
-|------|----------|-------------|
-| `apple-app-site-association` | iOS | `/.well-known/apple-app-site-association` |
-| `assetlinks.json` | Android | `/.well-known/assetlinks.json` |
-
-You can override individual values without editing the config file using CLI flags:
-
-```bash
-dart run magic:dowel deeplink:generate \
-  --output ./public \
-  --team-id ABCDE12345 \
-  --bundle-id com.example.app \
-  --package-name com.example.app \
-  --sha256-fingerprints AA:BB:CC:... \
-  --paths /app/* \
-  --paths /invite/*
-```
-
-| Flag | Config key | Description |
-|------|------------|-------------|
-| `--team-id` | `deeplink.ios.team_id` | Apple Developer Team ID |
-| `--bundle-id` | `deeplink.ios.bundle_id` | iOS bundle identifier |
-| `--package-name` | `deeplink.android.package_name` | Android package name |
-| `--sha256-fingerprints` | `deeplink.android.sha256_fingerprints` | SHA-256 fingerprint(s); repeatable |
-| `--paths` | `deeplink.paths` | URL paths to handle; repeatable |
-| `--output` | N/A | Output directory (default: `public`) |
-
-> [!NOTE]
-> When `lib/config/deeplink.dart` is present, the generate command reads it first and uses those values as defaults. CLI flags take precedence over config file values, allowing you to override specific fields for different environments (e.g. a CI pipeline using separate signing certificates).
-> The parser also tolerates a Dart generic type annotation before the list literal (`<String>[...]`), which is how a hand-typed config writes `sha256_fingerprints` and `paths`.
+- [CLI](../basics/cli.md): `deeplink:generate` reads these keys and `deeplink:doctor` validates them.
+- [Installation](./installation.md): the install command and the native setup.
+- [Drivers](../basics/drivers.md): what the `driver` key selects.
+- [Service Provider](../architecture/service-provider.md): how `boot()` reads `enabled` and `driver`.
+- [Configuration in Magic](https://anilcancakir.com/magic/docs/getting-started/configuration): config factories and dot notation.

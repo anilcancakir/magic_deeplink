@@ -1,195 +1,130 @@
 # Installation
 
-- [Introduction](#introduction)
+Add `magic_deeplink` to a Magic application, run its manifest installer, register a handler and finish the native setup an operating system needs before it hands your app a link.
+
+- [Quick Start](#quick-start)
 - [Requirements](#requirements)
-- [Installing the Package](#installing-the-package)
 - [Running the Install Command](#running-the-install-command)
-- [Registering the Service Provider](#registering-the-service-provider)
-- [Injecting the Config Factory](#injecting-the-config-factory)
 - [Registering a Route Handler](#registering-a-route-handler)
-- [Configuration Reference](#configuration-reference)
 - [Platform Setup](#platform-setup)
   - [iOS: Associated Domains and Info.plist](#ios-associated-domains-and-infoplist)
   - [Android: Intent Filter and Manifest](#android-intent-filter-and-manifest)
-- [Next Steps](#next-steps)
+  - [macOS](#macos)
+- [Verify](#verify)
+- [Related Documentation](#related-documentation)
 
-<a name="introduction"></a>
-## Introduction
+<a name="quick-start"></a>
+## Quick Start
 
-`magic_deeplink` adds Universal Links (iOS) and App Links (Android) to your Magic application. It follows the same ServiceProvider + driver + handler pattern used throughout the framework, so it wires up in exactly the same way as every other Magic plugin.
+```bash
+flutter pub add magic_deeplink
+dart run magic:dowel plugin:install magic_deeplink
+dart run magic:dowel deeplink:doctor
+```
 
-Under the hood the package delegates all platform stream handling to [`app_links`](https://pub.dev/packages/app_links) on Android, iOS and macOS; there is no native Dart plugin code of its own. That does not remove the platform setup an operating system requires before it will hand your app a link at all: an iOS entitlement, an Android intent filter, and a switch on each platform that keeps Flutter's own deep link handler out of the way. See [Platform Setup](#platform-setup) below.
+`magic_deeplink` delegates link delivery to [`app_links`](https://pub.dev/packages/app_links) and ships no native plugin code of its own. That does not remove the platform setup an operating system requires: an iOS entitlement, an Android intent filter, and a switch on each platform that keeps Flutter's own deep link handler out of the way. See [Platform Setup](#platform-setup).
 
 <a name="requirements"></a>
 ## Requirements
 
-- **Dart SDK**: 3.13.0 or higher
-- **Flutter**: 3.47.0 or higher
-- **Magic Framework** installed and bootstrapped (`lib/config/app.dart` present)
-
-<a name="installing-the-package"></a>
-## Installing the Package
-
-Add `magic_deeplink` to your Flutter project:
-
-```bash
-flutter pub add magic_deeplink
-```
-
-Or add it manually to `pubspec.yaml`:
-
-```yaml
-dependencies:
-  magic_deeplink: ^1.0.0
-```
-
-Then fetch dependencies:
-
-```bash
-flutter pub get
-```
+| Requirement | Constraint |
+|:------------|:-----------|
+| Dart SDK | `>=3.13.0` |
+| Flutter | `>=3.47.0` |
+| `magic` | `^1.0.0`, installed and bootstrapped: `lib/config/app.dart` declares a `'providers'` list and `lib/main.dart` calls `Magic.init` with `configFactories` |
 
 <a name="running-the-install-command"></a>
 ## Running the Install Command
 
-The command is host-dispatched via `dowel` (`dart run magic:dowel plugin:install magic_deeplink` registers `MagicDeeplinkDowelProvider` under `.dowel/plugins.json`, see [CLAUDE.md](../../CLAUDE.md)). Run it from your project root to scaffold the configuration file and inject the provider automatically:
+`plugin:install` runs the manifest in the package's `install.yaml` and registers `MagicDeeplinkDowelProvider` in `.dowel/plugins.json`, which is what makes the `deeplink:*` commands available in your project. The package must already be in `pubspec.yaml` and resolved by `flutter pub get`.
 
 ```bash
-dart run magic:dowel deeplink:install
+dart run magic:dowel plugin:install magic_deeplink
 ```
 
-The command performs the following steps:
+The manifest:
 
-1. **Validates** that `lib/config/app.dart` exists (Magic must be installed first).
-2. **Creates** `lib/config/deeplink.dart` with sensible defaults.
-3. **Injects** `DeeplinkServiceProvider` into the `providers` list in `lib/config/app.dart`.
-4. **Injects** `() => deeplinkConfig` into the `configFactories` list in `lib/main.dart`.
+1. Publishes `lib/config/deeplink.dart` from the bundled stub. See [Configuration](./configuration.md) for its keys.
+2. Adds `(app) => DeeplinkServiceProvider(app)` and its import to the `'providers'` list in `lib/config/app.dart`. The install fails with an error naming the file when `app.dart` has no such list.
+3. Adds `() => deeplinkConfig` and `import 'config/deeplink.dart';` to the `configFactories` list in `lib/main.dart`.
+4. Sets `FlutterDeepLinkingEnabled` to `false` in `ios/Runner/Info.plist`.
 
-> [!NOTE]
-> If `lib/config/deeplink.dart` already exists the command skips the write and prints a warning. Pass `--force` to overwrite an existing configuration file.
+`dart run magic:dowel deeplink:install` runs the same manifest again, for a project that has already registered the provider. An existing `lib/config/deeplink.dart` that the installer did not write, or that changed since, is a conflict: the command exits with `1` until you pass `--force`.
 
-```bash
-dart run magic:dowel deeplink:install --force
-```
+| Flag | Effect |
+|:-----|:-------|
+| `--force` | Bypass the conflict check and overwrite. |
+| `--dry-run` | Print the staged operations without writing. |
+| `--non-interactive` | Skip prompts and use defaults. |
 
-<a name="registering-the-service-provider"></a>
-## Registering the Service Provider
-
-If you ran `dart run magic:dowel deeplink:install`, the provider was already injected. The relevant section of `lib/config/app.dart` will look like this:
+After the install, `DeeplinkServiceProvider` is in your providers list:
 
 ```dart
 import 'package:magic/magic.dart';
-import 'package:magic_deeplink/magic_deeplink.dart'; // injected by install
+import 'package:magic_deeplink/magic_deeplink.dart';
 
 final appConfig = {
   'app': {
-    'name': Env.get('APP_NAME', 'My App'),
     'providers': [
       (app) => RouteServiceProvider(app),
       (app) => AppServiceProvider(app),
-      (app) => DeeplinkServiceProvider(app), // injected by install
+      (app) => DeeplinkServiceProvider(app), // added by the install
     ],
   },
 };
 ```
 
-> [!TIP]
-> `DeeplinkServiceProvider` registers `DeeplinkManager` as a singleton under the `'deeplinks'` key in the IoC container. You can resolve it anywhere with `app.make<DeeplinkManager>('deeplinks')`.
-
-<a name="injecting-the-config-factory"></a>
-## Injecting the Config Factory
-
-The install command also adds the deeplink config factory to `Magic.init()` in `lib/main.dart`:
+and `lib/main.dart` passes the config factory to `Magic.init`:
 
 ```dart
-import 'package:magic/magic.dart';
-import 'package:material_ui/material_ui.dart';
-import 'config/app.dart';
-import 'config/deeplink.dart'; // injected by install
-
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-
-  await Magic.init(
-    configFactories: [
-      () => appConfig,
-      () => deeplinkConfig, // injected by install
-    ],
-  );
-
-  runApp(MagicApplication(title: 'My App'));
-}
+await Magic.init(
+  configFactories: [
+    () => appConfig,
+    () => deeplinkConfig, // added by the install
+  ],
+);
 ```
+
+The provider binds `DeeplinkManager` as a singleton under the `'deeplinks'` key, so `app.make<DeeplinkManager>('deeplinks')` resolves it anywhere.
 
 <a name="registering-a-route-handler"></a>
 ## Registering a Route Handler
 
-The install command wires the driver and the provider, but it registers no handler: `DeeplinkServiceProvider.boot()` never constructs a `RouteDeeplinkHandler` on its own, because it has no way to know which paths your app claims. Register one yourself, in your own service provider's `boot()`, after the paths in your config are settled:
+The install wires the driver and the provider but registers no handler: `DeeplinkServiceProvider` cannot know which paths your app serves, and a link that reaches the manager with no handler registered is dropped without an error. Register one in your own provider's `boot()`:
 
 ```dart
 import 'package:magic/magic.dart';
 import 'package:magic_deeplink/magic_deeplink.dart';
 
 class AppServiceProvider extends ServiceProvider {
+  AppServiceProvider(super.app);
+
+  @override
+  void register() {}
+
   @override
   Future<void> boot() async {
     DeeplinkManager().registerHandler(
       RouteDeeplinkHandler(
-        paths: app.make<ConfigRepository>('config').get('deeplink.paths'),
+        paths: ['/monitors/:id', '/invitations/:token/accept'],
+        hosts: [Config.getOrFail<String>('deeplink.domain')],
       ),
     );
   }
 }
 ```
 
-See [Handlers](https://magic.fluttersdk.com/packages/deeplink/basics/handlers) for the full contract and for writing a custom handler.
-
-<a name="configuration-reference"></a>
-## Configuration Reference
-
-The generated `lib/config/deeplink.dart` looks like this out of the box:
-
-```dart
-Map<String, dynamic> get deeplinkConfig => {
-  'deeplink': {
-    'enabled': true,
-    'driver': 'app_links',   // only supported driver
-    'domain': 'example.com', // your Universal Link / App Link domain
-    'scheme': 'https',
-
-    'ios': {
-      'team_id': 'YOUR_TEAM_ID',     // Apple Developer Team ID
-      'bundle_id': 'com.example.app', // app bundle identifier
-    },
-
-    'android': {
-      'package_name': 'com.example.app',
-      'sha256_fingerprints': [
-        'YOUR_SHA256_FINGERPRINT', // keystore SHA-256, colon-separated
-      ],
-    },
-
-    'paths': [
-      '/*', // path patterns handled as deep links
-    ],
-  },
-};
-```
-
-Replace `example.com`, the team/bundle identifiers, and the SHA-256 fingerprint with your real values before deploying.
-
-> [!NOTE]
-> The `driver` key must be `'app_links'`. It is the only driver included with this package. Additional drivers can be added by implementing the `DeeplinkDriver` contract.
+See [Handlers](../basics/handlers.md) for the contract, the path patterns and writing a custom handler.
 
 <a name="platform-setup"></a>
 ## Platform Setup
 
-An operating system will not hand your app a link until you tell it your app owns the domain, and Flutter's own deep link handler will race the `app_links` driver this package wires in unless you switch it off. Neither step is automated beyond the one plist key noted below; both are one-time edits to the native project.
+An operating system will not hand your app a link until you declare that the app owns the domain, and Flutter's own deep link handler races the `app_links` driver unless you switch it off. Only the iOS plist key is automated; the rest is a one-time edit to the native project.
 
 <a name="ios-associated-domains-and-infoplist"></a>
 ### iOS: Associated Domains and Info.plist
 
-1. **Add the Associated Domains capability.** In Xcode, open the `Runner` target's Signing & Capabilities tab, add "Associated Domains", and add an entry of the form `applinks:<your-domain>` (e.g. `applinks:example.com`). This sets the `com.apple.developer.associated-domains` entitlement:
+1. **Add the Associated Domains capability.** In Xcode, open the `Runner` target's Signing & Capabilities tab, add "Associated Domains" and an entry of the form `applinks:<your-domain>`. This writes the `com.apple.developer.associated-domains` entitlement to `ios/Runner/Runner.entitlements`:
 
    ```xml
    <key>com.apple.developer.associated-domains</key>
@@ -198,21 +133,21 @@ An operating system will not hand your app a link until you tell it your app own
    </array>
    ```
 
-2. **Turn off Flutter's own deep link handler.** `app_links` owns link delivery in this package; Flutter's default handler competing for the same link is what `flutter_deeplinking_enabled` avoids on Android. On iOS the equivalent switch is the `FlutterDeepLinkingEnabled` key in `ios/Runner/Info.plist`, set to `false`:
+2. **Turn off Flutter's own deep link handler.** Flutter has handled deep links itself by default since 3.27, and when it does the handler chain never sees the link. The `FlutterDeepLinkingEnabled` key in `ios/Runner/Info.plist` must be `false`:
 
    ```xml
    <key>FlutterDeepLinkingEnabled</key>
    <false/>
    ```
 
-   The install command applies this key for you (`install.yaml`'s `native.ios.info_plist`), so a fresh `deeplink:install` run needs no manual edit here. Re-check it if your project predates this release, or if something else in your project's `Info.plist` template has since overwritten it.
+   The install applies this key (`native.ios.info_plist` in `install.yaml`). Re-check it when something else in your project overwrites `Info.plist`.
 
-3. **Host the `apple-app-site-association` file.** Generate it with `dart run magic:dowel deeplink:generate --output ./public/.well-known` (the command writes straight into the output directory) and upload it to `https://<your-domain>/.well-known/apple-app-site-association`, served over HTTPS with no redirect.
+3. **Host the `apple-app-site-association` file.** Generate it with [`deeplink:generate`](../basics/cli.md#generate) and serve it from `https://<your-domain>/.well-known/apple-app-site-association` over HTTPS with no redirect.
 
 <a name="android-intent-filter-and-manifest"></a>
 ### Android: Intent Filter and Manifest
 
-1. **Add the intent filter.** Inside the `<activity>` element for `.MainActivity` in `android/app/src/main/AndroidManifest.xml`, add an autoVerify intent filter with a `<data>` element for both `http` and `https` (Android's own guidance: "The intent filter must include `<data>` elements for both `http` and `https` schemes."):
+1. **Add the intent filter.** Inside the `<activity>` element of `android/app/src/main/AndroidManifest.xml`, add an autoVerify filter with a `<data>` element for both `http` and `https`:
 
    ```xml
    <activity
@@ -230,38 +165,38 @@ An operating system will not hand your app a link until you tell it your app own
    </activity>
    ```
 
-2. **Turn off Flutter's own deep link handler, inside `<activity>`.** Add this `<meta-data>` element inside the same `<activity>` element as the intent filter above, not inside `<application>`:
+2. **Turn off Flutter's own deep link handler, inside `<activity>`.** Add this element to the same `<activity>`, not to `<application>`:
 
    ```xml
    <meta-data android:name="flutter_deeplinking_enabled" android:value="false" />
    ```
 
-   This one is **not** applied by `deeplink:install`. dowel's `XmlEditor` (the shared engine every plugin's `native.android.meta_data` key runs through) inserts `<meta-data>` entries into `<application>`, and Flutter reads this specific key from `<activity>`; automating it through that key would silently write a `<meta-data>` entry Flutter never looks at, passing every check while doing nothing. Add it by hand.
+   The install does not apply this one. The `meta_data` key of `install.yaml` inserts into `<application>`, Flutter reads this entry from `<activity>`, and an automated entry in the wrong element would look applied while doing nothing. Add it by hand; [`deeplink:doctor`](../basics/cli.md#doctor) fails when it sits in the wrong element.
 
-3. **Host the `assetlinks.json` file.** Generate it with `dart run magic:dowel deeplink:generate --output ./public/.well-known` (the command writes straight into the output directory) and upload it to `https://<your-domain>/.well-known/assetlinks.json`. Android verifies it at install time, not at link-click time.
+3. **Host the `assetlinks.json` file.** Generate it with `deeplink:generate` and serve it from `https://<your-domain>/.well-known/assetlinks.json`. Android verifies it at install time, not at link-click time.
+
+<a name="macos"></a>
+### macOS
+
+`AppLinksDriver` reports itself supported on macOS, so the provider wires it there. Nothing else in this package covers macOS: the install does not touch the macOS project, `deeplink:doctor` inspects only `ios/` and `android/`, and `deeplink:generate` writes a single `appIDs` entry built from one `team_id` and `bundle_id`, so a macOS app with a different bundle identifier needs its own entry. Follow the macOS setup in the [`app_links`](https://pub.dev/packages/app_links) package for the entitlement.
 
 <a name="verify"></a>
-## Verify the install before you reach for a device
+## Verify
 
 ```bash
 dart run magic:dowel deeplink:doctor
 ```
 
-Every way of getting this install wrong is silent. A `<meta-data>` on the wrong element, a missing `<data>` scheme, an association file that names a different bundle, a provider that never reached `lib/config/app.dart`: none of them throws, none of them logs, and the only symptom is a link that opens the browser. The doctor reads the project's own files and says which prerequisite is actually in place, including the Dart wiring that makes every platform file matter.
+Every way of getting this install wrong is silent: a `<meta-data>` on the wrong element, a missing `<data>` scheme, an association file that names another bundle, a provider that never reached `lib/config/app.dart`. None throws or logs; the only symptom is a link that opens the browser. The doctor reads the project's own files and reports which prerequisite is missing. Add `--remote` to also fetch both association files from the live domain.
 
-Add `--remote` to also fetch both association files from the live domain, which is the half a repo-only check cannot see:
+It cannot prove that a real device matches a link to this app: `swcutil verify` needs root and Android verifies at install time, so the last mile is always a real device. See [CLI](../basics/cli.md#doctor) for every check.
 
-```bash
-dart run magic:dowel deeplink:doctor --remote
-```
+<a name="related-documentation"></a>
+## Related Documentation
 
-What it can never prove is that a real device matches an incoming link to this app: `swcutil verify` needs root and Android verifies at install time. The last mile is always a real device, and on iOS it must be a **profile or release** build, since iOS refuses to launch a debug Flutter build from a link or from the home screen.
-
-<a name="next-steps"></a>
-## Next Steps
-
-Now that the plugin is installed and wired up:
-
-- **[Configuration](https://magic.fluttersdk.com/packages/deeplink/getting-started/configuration)**: Learn how to customise paths, schemes, and platform settings.
-- **[Handlers](https://magic.fluttersdk.com/packages/deeplink/basics/handlers)**: Add your own URI handlers with `RouteDeeplinkHandler`.
-- **[CLI Tools](https://magic.fluttersdk.com/packages/deeplink/basics/cli)**: Use `dart run magic:dowel deeplink:generate` to produce the Apple App Site Association and Android Asset Links files.
+- [Configuration](./configuration.md): the keys of `lib/config/deeplink.dart`.
+- [Handlers](../basics/handlers.md): `RouteDeeplinkHandler`, tenant switching and custom handlers.
+- [CLI](../basics/cli.md): `deeplink:install`, `deeplink:generate` and `deeplink:doctor`.
+- [Drivers](../basics/drivers.md): platform support of `AppLinksDriver`.
+- [Service Provider](../architecture/service-provider.md): what `boot()` wires.
+- [Routing in Magic](https://anilcancakir.com/magic/docs/basics/routing): `MagicRoute` and the `url_strategy` setting.
