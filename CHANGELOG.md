@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- **`llms.txt`.** A plain-text summary of the API, the platforms and the rules for an AI coding agent. (`llms.txt`)
+- **The `magic-deeplink` agent skill.** Install it with `npx skills add anilcancakir/magic_deeplink`. (`skills/magic-deeplink/`)
+- **A runnable `example/`.** A small app that registers a `RouteDeeplinkHandler`. (`example/`)
+
+### Changed
+- **The pub.dev listing names the new home.** The homepage is `https://anilcancakir.com/magic_deeplink`, the repository and issue tracker sit under `anilcancakir`, the separate documentation link is gone, and the description leads with what the package does. (`pubspec.yaml`)
+- **The README and the `doc/` pages are rewritten.** Each follows the standard page shape, and a checker in `tool/` keeps the pages consistent. (`README.md`, `doc/`, `tool/check-docs.py`)
+- **The post-install message points `deeplink:generate` at `public/.well-known` and lists `deeplink:doctor`.** It said `--output ./public`, which writes the association files where the doctor does not look. Its handler sample now sets `hosts`, as the README does. (`install.yaml`)
+- **The install stub no longer writes `'scheme': 'https'`.** Nothing in the package reads that key, so a project that wants it gone can delete it from `lib/config/deeplink.dart`; new installs simply do not get it. (`assets/stubs/install/deeplink_config.stub`)
+
 ## [1.0.0] - 2026-11-14
 
 ### Changed

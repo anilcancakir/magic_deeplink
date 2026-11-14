@@ -1,6 +1,8 @@
 # Handlers
 
-- [Introduction](#introduction)
+Handlers decide what an incoming link does: `DeeplinkManager` offers each URI to its registered handlers in order and the first one that claims it handles it.
+
+- [Quick Reference](#quick-reference)
 - [The DeeplinkHandler Contract](#the-deeplinkhandler-contract)
     - [canHandle](#canhandle)
     - [handle](#handle)
@@ -13,18 +15,34 @@
 - [Creating Custom Handlers](#creating-custom-handlers)
 - [Registering Handlers](#registering-handlers)
 - [Handler Execution Order](#handler-execution-order)
+- [Gotchas](#gotchas)
+- [Related Documentation](#related-documentation)
 
-<a name="introduction"></a>
-## Introduction
+<a name="quick-reference"></a>
+## Quick Reference
 
-Handlers are the core processing unit of the deep link pipeline. When a deep link arrives, the `DeeplinkManager` walks its registered handler list and delegates the URI to the first handler that claims it. This chain-of-responsibility pattern keeps each handler focused on a single concern and makes the pipeline trivially extensible.
+```dart
+import 'package:magic_deeplink/magic_deeplink.dart';
 
-Every handler implements the `DeeplinkHandler` contract. The two built-in handlers, `RouteDeeplinkHandler` and `OneSignalDeeplinkHandler`, cover the most common integration scenarios out of the box.
+void main() {
+  DeeplinkManager().registerHandler(
+    RouteDeeplinkHandler(
+      paths: ['/products/:id', '/shop/*'],
+      hosts: ['example.com'],
+    ),
+  );
+}
+```
+
+| Class | Role |
+|:------|:-----|
+| `DeeplinkHandler` | The contract: `canHandle(Uri)` and `handle(Uri, {source, payload})`. |
+| `RouteDeeplinkHandler` | Matches the path against patterns and navigates with `MagicRoute.to()`. |
+| `TenantSwitchGate` | Optional: lets a tapped push switch tenant before `RouteDeeplinkHandler` navigates. |
+| `OneSignalDeeplinkHandler` | Not a `DeeplinkHandler`: turns a tapped push into a `handleUri` call. |
 
 <a name="the-deeplinkhandler-contract"></a>
 ## The DeeplinkHandler Contract
-
-All handlers extend the abstract `DeeplinkHandler` class:
 
 ```dart
 abstract class DeeplinkHandler {
@@ -40,26 +58,12 @@ abstract class DeeplinkHandler {
 <a name="canhandle"></a>
 ### canHandle
 
-```dart
-bool canHandle(Uri uri);
-```
-
-A synchronous predicate. Return `true` if this handler wants to process the URI; `false` to pass it to the next handler in the chain. Keep this method cheap: it runs on every incoming link before any handler is invoked.
+A synchronous, side-effect-free predicate. Return `true` to claim the URI, `false` to pass it to the next handler. It runs on every incoming link, so keep it cheap.
 
 <a name="handle"></a>
 ### handle
 
-```dart
-Future<bool> handle(
-  Uri uri, {
-  required DeeplinkSource source,
-  Map<String, dynamic>? payload,
-});
-```
-
-The async processing method, called only when `canHandle` returned `true`. Return `true` if the URI was successfully handled, `false` if processing failed but should not be retried by another handler. **Never throw** from this method: exceptions break the pipeline. Catch internally and return `false` on failure.
-
-`source` and `payload` travel with the URI all the way from `DeeplinkManager.handleUri()`; see [DeeplinkSource](#deeplinksource) below for what they carry and why a handler should check them before trusting anything beyond the path.
+Called only after `canHandle` returned `true`. Return `true` when the URI was handled and `false` when it could not be, and never throw: the manager does not catch, so the exception reaches whoever called `handleUri`. For a link the provider delivers that means a logged error and a lost link, and no later handler gets a try. `source` and `payload` come from `DeeplinkManager.handleUri()` and say where the instruction came from; see [DeeplinkSource](#deeplinksource).
 
 <a name="deeplinksource"></a>
 ### DeeplinkSource
@@ -68,15 +72,15 @@ The async processing method, called only when `canHandle` returned `true`. Retur
 enum DeeplinkSource { osLink, push, manual }
 ```
 
-Where the instruction to open `uri` came from, and the two paths are not equally trusted:
+The sources are not equally trusted:
 
 | Value | Meaning | `payload` |
-|-------|---------|-----------|
-| `osLink` | The operating system opened the app on a Universal Link or App Link. Attacker-craftable: anyone who can get the device to open a URI can produce one of these. | Always `null`. |
-| `push` | The user tapped a push notification, and the payload is the server's own. | The full push payload the notification arrived with. |
+|:------|:--------|:----------|
+| `osLink` | The operating system opened the app on a Universal Link or App Link. Anyone who can get the device to open a URI can craft one, so treat it as untrusted input. | Always `null`. |
+| `push` | The user tapped a push notification, and the payload is the server's own. | The full payload the notification arrived with. |
 | `manual` | The application asked for the link itself, in code or in a test. | Whatever the caller passed, or `null`. |
 
-`source` is a required, non-defaulted parameter precisely so a handler cannot forget to ask: a handler that reads `payload` to act on more than the path it was given (switching the user's active team off a `team_id` key, say) may only do that when `source == DeeplinkSource.push`, because that is the one case where the payload was authored by the server rather than crafted into a URI. `RouteDeeplinkHandler` reads them only when it was given a [`tenantGate`](#switching-tenants-from-a-push): navigating to a path the consumer listed is safe regardless of who asked for it, moving the session's tenant is not.
+`source` is required and has no default, so a handler cannot forget to ask. A handler that acts on more than the path it was given, such as switching the active team from a `team_id` key, may do so only when `source == DeeplinkSource.push`, because that is the one case where the payload was authored by the server rather than crafted into a URI. `RouteDeeplinkHandler` reads `source` and `payload` only when it was given a [`tenantGate`](#switching-tenants-from-a-push): navigating to a path you listed is safe whoever asked, moving the session's tenant is not.
 
 <a name="built-in-handlers"></a>
 ## Built-in Handlers
@@ -84,9 +88,7 @@ Where the instruction to open `uri` came from, and the two paths are not equally
 <a name="routedeeplinkhandler"></a>
 ### RouteDeeplinkHandler
 
-Matches incoming URI paths against a list of patterns and navigates to the matched route using `MagicRoute.to()`.
-
-**Constructor:**
+Matches the URI path against a list of patterns and navigates to the match with `MagicRoute.to()`.
 
 ```dart
 RouteDeeplinkHandler({
@@ -97,165 +99,148 @@ RouteDeeplinkHandler({
 })
 ```
 
-`hosts` is optional and defaults to `null`, which keeps the original path-only behaviour: an absolute URI on any host matching one of `paths` is claimed. Set it to gate `canHandle` on the address as well:
-
-- A relative URI (no scheme, no authority, the shape a push payload path carries) is always accepted; there is no host to check.
-- An absolute URI is accepted only over `http` or `https`, with no explicit port and no userinfo, and only when its host equals one entry of `hosts` case-insensitively. Anything else (a different host, a non-http(s) scheme, a port, embedded credentials) is refused before the path is even matched.
-- A blank entry in `hosts` is ignored rather than treated as a wildcard. `hosts: ['']` refuses every absolute URI, including one whose own host is empty (`https:/incidents/5`); it does not fall back to matching any host.
-
-```dart
-final handler = RouteDeeplinkHandler(
-  paths: ['/monitors/:id'],
-  hosts: ['example.com'],
-);
-
-handler.canHandle(Uri.parse('/monitors/5')); // true, relative
-handler.canHandle(Uri.parse('https://EXAMPLE.com/monitors/5')); // true, case-insensitive
-handler.canHandle(Uri.parse('https://evil.com/monitors/5')); // false, wrong host
-handler.canHandle(Uri.parse('https://example.com:8443/monitors/5')); // false, explicit port
-```
-
-`caseSensitive` is optional and defaults to `false`, matching go_router's own default of case-sensitive routes only when a consumer opts in: `/incidents/5` and `/INCIDENTS/5` both match a `paths` entry of `/incidents/:id` unless `caseSensitive: true` is passed, in which case only the exact case matches and the mismatched one falls through to the next handler (or to go_router's not-found page if none claims it).
-
-**Pattern syntax:**
+**Pattern syntax.** Patterns are compiled to anchored regular expressions, and a trailing slash on the incoming path is dropped before matching:
 
 | Pattern | Matches |
-|---------|---------|
+|:--------|:--------|
 | `/products` | Exactly `/products` |
-| `/products/*` | Any single path segment after `/products/` |
-| `/products/:id` | A single non-slash segment (named parameter) |
-| `/shop/*/detail` | Any path with a wildcard middle segment |
+| `/products/:id` | One non-slash segment, as a named parameter |
+| `/products/*` | Anything after `/products/`, slashes included |
+| `/shop/*/detail` | `/shop/`, anything, then `/detail` |
 
-Matching is case-insensitive by default (see `caseSensitive` above) and trailing slashes are normalized before comparison.
+Matching ignores letter case unless `caseSensitive` is `true`. go_router routes are case-sensitive, so a project that mounted `/incidents/:id` can set it to stop `/INCIDENTS/5` being claimed and then landing on go_router's not-found page.
 
-**Example:**
+**Hosts.** `hosts` defaults to `null`, which claims an absolute URI on any host whose path matches. Set it to gate `canHandle` on the address as well:
 
-```dart
-final handler = RouteDeeplinkHandler(
-  paths: [
-    '/products/:id',
-    '/shop/*',
-    '/promotions',
-  ],
-);
-```
-
-When a matching URI arrives, the handler calls:
+- A relative URI (no scheme and no authority, the shape of a push payload path) is always accepted, since there is no host to check.
+- An absolute URI is accepted only over `http` or `https`, with no explicit port and no userinfo, and only when its host equals an entry of `hosts`, ignoring case. A different host, another scheme, a port or embedded credentials is refused before the path is matched.
+- A blank entry is ignored rather than treated as a wildcard: `hosts: ['']` refuses every absolute URI.
 
 ```dart
-MagicRoute.to(uri.path, query: uri.queryParameters);
+import 'package:magic_deeplink/magic_deeplink.dart';
+
+void main() {
+  final RouteDeeplinkHandler handler = RouteDeeplinkHandler(
+    paths: ['/monitors/:id'],
+    hosts: ['example.com'],
+  );
+
+  handler.canHandle(Uri.parse('/monitors/5')); // true, relative
+  handler.canHandle(Uri.parse('https://EXAMPLE.com/monitors/5')); // true
+  handler.canHandle(Uri.parse('https://evil.com/monitors/5')); // false, wrong host
+  handler.canHandle(Uri.parse('https://example.com:8443/monitors/5')); // false, port
+}
 ```
 
-Query parameters are forwarded automatically, so `https://example.com/products/42?ref=email` navigates to `/products/42` with `{'ref': 'email'}` available via `Request.query('ref')`. The path navigated is the PARSED `uri.path`, the same value `canHandle` matched, because `Uri` resolves dot segments while parsing.
+**Navigation.** A matching link navigates with the parsed path, the same value `canHandle` matched, and forwards the query parameters:
 
-`handle` never throws. It re-checks `canHandle` and answers `false` for a path it does not serve, and a navigation that fails (a router that is not built yet answers with a `StateError`) is logged through magic's `Log`, when a `log` binding exists, and answered `false`.
+```dart
+import 'package:magic/magic.dart';
+
+void open(Uri uri) {
+  MagicRoute.to(uri.path, query: uri.queryParameters);
+}
+```
+
+So `https://example.com/products/42?ref=email` opens `/products/42` with `Request.query('ref')` answering `email`.
+
+`handle` never throws. It re-checks `canHandle` and answers `false` for a path it does not serve, and a navigation that fails, such as the `StateError` of a router that is not built yet, is logged through `Log` when a `log` binding exists and answered `false`.
 
 <a name="switching-tenants-from-a-push"></a>
 ### Switching Tenants from a Push
 
-A multi-tenant backend resolves a page against the session's current tenant and answers 404 for another tenant's row. A push paging a user about another team's incident would land on that 404, so `RouteDeeplinkHandler` can switch first when it is given a `TenantSwitchGate`:
+A multi-tenant backend resolves a page against the session's current tenant and answers 404 for another tenant's row, so a push that pages a user about another team's incident would land on that 404. Give `RouteDeeplinkHandler` a `TenantSwitchGate` and it switches first:
 
 ```dart
-final handler = RouteDeeplinkHandler(
+import 'package:magic/magic.dart';
+import 'package:magic_deeplink/magic_deeplink.dart';
+import 'package:magic_starter/magic_starter.dart';
+
+final RouteDeeplinkHandler handler = RouteDeeplinkHandler(
   paths: ['/incidents/:id'],
   tenantGate: TenantSwitchGate(
-    // Your app's own team state; any `String?` and any `Future<bool>` will do.
-    currentTenantId: () => TeamController.instance.currentTeamId?.toString(),
-    switchTenant: (String teamId) => TeamController.instance.switchTeam(teamId),
+    currentTenantId: MagicStarter.currentTeamId,
+    switchTenant: MagicStarter.switchTeam,
     onSwitched: () => Magic.success('Switched team', 'Opened on the team it belongs to.'),
     onSwitchFailed: (String teamId) => Magic.error('Error', 'Could not switch team.'),
   ),
 );
 ```
 
+Any `String? Function()` and `Future<bool> Function(String)` will do; the sample uses `magic_starter`'s team switcher.
+
 | Field | Meaning |
-|-------|---------|
+|:------|:--------|
 | `payloadKey` | The push payload key naming the owning tenant. Defaults to `'team_id'`. |
 | `currentTenantId` | The session's current tenant id, or `null` while it has not resolved. |
 | `switchTenant` | Moves the session onto a tenant and answers whether it took. |
-| `onSwitched` | Optional. Runs after a successful switch, before the navigation. One that throws is logged and the link still opens, since the session has already moved. |
+| `onSwitched` | Optional. Runs after a successful switch, before the navigation. One that throws is logged and the link still opens, because the session has already moved. |
 | `onSwitchFailed` | Optional. Runs with the requested tenant id when `switchTenant` answered `false` or threw. |
 
-The rules are the handler's and no gate configuration changes them:
+The rules belong to the handler, and no gate configuration changes them:
 
-- **Only `DeeplinkSource.push` switches.** An `osLink` or a `manual` link navigates without switching, whatever its payload or query carries: an OS link is attacker-craftable, and a switch moves the session's scoping (and often its billing) subject.
+- **Only `DeeplinkSource.push` switches.** An `osLink` or `manual` link navigates without switching, whatever its payload or query carries.
 - **The tenant comes from the payload under `payloadKey`, never from the URI query.** The query is part of the link.
 - **Ids compare as trimmed strings**, so a wire `5` and a local `'5'` are the same tenant.
 - **No evidence, no switch.** An absent or blank payload tenant, or a `null` current tenant, navigates directly.
-- **A failed switch does not navigate.** `switchTenant` answering `false` calls `onSwitchFailed`, logs an error and answers `false`; opening the page anyway would meet the same 404. A `switchTenant` that throws counts as a failed switch: it calls `onSwitchFailed`, is logged, and answers `false` without navigating. An `onSwitched` that throws is logged and the page still opens, because by then the session is already on the new tenant.
+- **A failed switch does not navigate.** `switchTenant` answering `false` or throwing calls `onSwitchFailed`, logs an error and answers `false`, since opening the page anyway would meet the same 404.
 
 <a name="breadcrumb-events"></a>
 ### Breadcrumb Events
 
-`RouteDeeplinkHandler` dispatches two magic events through `Event.dispatch`, unawaited, so a failing listener never costs the navigation:
+`RouteDeeplinkHandler` dispatches these events through `Event.dispatch`, unawaited, so a failing listener never costs the navigation:
 
 | Event | When | `breadcrumbCategory` | `breadcrumbData` |
-|-------|------|----------------------|------------------|
+|:------|:-----|:---------------------|:-----------------|
 | `DeeplinkOpened` | After `canHandle` passed, before any switch or navigation | `deeplink.open` | `source`, `route`, `names_tenant` |
 | `DeeplinkNavigating` | Immediately before `MagicRoute.to` | `deeplink.navigate` | `route` |
 
-Both implement magic's `ReportsBreadcrumb`, so a crash reporter that watches every event with `Event.listenAny` (as `magic_sentry` does) records them without this package depending on it. Dispatching `DeeplinkNavigating` right before the navigation makes it the last breadcrumb on an exception thrown while the destination builds, which tells "the link never resolved" apart from "the page it named threw". `route` is the handler's own pattern that matched (`/invitations/:token/accept`), not the concrete path, and the data never carries the query string or a payload value, since a link can carry an invite or reset token in any of them.
+Both implement magic's `ReportsBreadcrumb`, so a crash reporter that listens to every event with `Event.listenAny`, as `magic_sentry` does, records them without this package depending on it. `DeeplinkNavigating` is the last breadcrumb before the router runs, which tells "the link never resolved" apart from "the page it named threw". `route` is the handler's own matched pattern (`/invitations/:token/accept`), not the concrete path, and the data never carries the query string or a payload value, since a link can carry an invite or reset token in any of them.
 
 ```dart
-Event.listenAny((MagicEvent event) {
-  if (event is DeeplinkNavigating) {
-    debugPrint('opening a link matching ${event.route}');
-  }
-});
+import 'package:flutter/foundation.dart';
+import 'package:magic/magic.dart';
+import 'package:magic_deeplink/magic_deeplink.dart';
+
+void main() {
+  Event.listenAny((MagicEvent event) {
+    if (event is DeeplinkNavigating) {
+      debugPrint('opening a link matching ${event.route}');
+    }
+  });
+}
 ```
 
 <a name="onesignaldeeplinkhandler"></a>
 ### OneSignalDeeplinkHandler
 
-Bridges OneSignal push-notification click events into the deep link pipeline. It does **not** implement `DeeplinkHandler` directly: instead it acts as a listener adapter that extracts a URI from the notification payload and feeds it to the manager.
+Bridges push-notification clicks into the pipeline. It does not implement `DeeplinkHandler`: it is a listener that reads a URI from the notification payload and passes it to `DeeplinkManager.handleUri()` with `DeeplinkSource.push` and the whole payload.
 
-**URI extraction:**
+`DeeplinkServiceProvider.boot()` wires it for you when `app.bound('notifications')` is true, so an app with `magic_notifications` needs no code. The URI comes from the first of the payload keys `url`, `deep_link`, `link` and `uri` that holds a non-empty string. A push with no such key is not a failure: most notifications are meant to be read.
 
-The handler checks the notification `data` map for these keys in order: `url`, `deep_link`, `link`, `uri`. The first non-empty string value that parses as a valid URI is used.
-
-**Setup:**
+To wire it yourself, call `setup()` once with the manager and the notification manager, and `dispose()` when done:
 
 ```dart
 void setup(DeeplinkManager manager, dynamic notifications)
-```
-
-Call `setup()` once, passing the manager singleton and the `magic_notifications` notification manager (resolved out of the container, e.g. `app.make('notifications')`). `notifications` is read structurally as `dynamic` so this package declares no dependency on `magic_notifications`. The handler subscribes to the manager's own `onPushClicked` stream, which the manager owns from construction and republishes onto whenever a driver is attached later, so it works whether the notifications provider has booted yet or not. Every matched URI is routed through `manager.handleUri()`.
-
-A notification manager that publishes no `onPushClicked` stream, or an event carrying no readable `data` payload, is reported at error level through magic's `Log` (guarded by `Magic.bound('log')`) rather than thrown or silently dropped.
-
-**Disposal:**
-
-```dart
 void dispose()
 ```
 
-Cancels the internal stream subscription. Call this in your service provider's teardown or when the handler is no longer needed.
-
-**Example:**
-
-```dart
-final onesignalHandler = OneSignalDeeplinkHandler();
-
-// Inside DeeplinkServiceProvider.boot(), after app.bound('notifications'):
-onesignalHandler.setup(
-  DeeplinkManager(),
-  app.make('notifications'), // the magic_notifications manager
-);
-```
+`notifications` is read structurally, so this package declares no dependency on `magic_notifications`. The handler subscribes to the notification manager's `onPushClicked` stream, which exists from construction, so it works whether or not the notifications provider has booted. A manager that publishes no such stream, or an event with no readable `data` payload, is reported at error level through `Log` when a `log` binding exists, rather than thrown or silently dropped. A click that arrives before the first frame waits for it, so a cold start from a push still finds the router.
 
 <a name="creating-custom-handlers"></a>
 ## Creating Custom Handlers
 
-Extend `DeeplinkHandler` to handle any URI matching logic your application requires.
+Extend `DeeplinkHandler` for any matching logic the path patterns cannot express:
 
 ```dart
+import 'package:magic/magic.dart';
 import 'package:magic_deeplink/magic_deeplink.dart';
 
 class ProductDeeplinkHandler extends DeeplinkHandler {
   @override
   bool canHandle(Uri uri) {
-    // Only claim URIs with the /products path and a numeric id segment
-    final segments = uri.pathSegments;
+    final List<String> segments = uri.pathSegments;
+
     return segments.length == 2 &&
         segments[0] == 'products' &&
         int.tryParse(segments[1]) != null;
@@ -267,98 +252,69 @@ class ProductDeeplinkHandler extends DeeplinkHandler {
     required DeeplinkSource source,
     Map<String, dynamic>? payload,
   }) async {
-    final id = int.parse(uri.pathSegments[1]);
-
     try {
-      final product = await ProductRepository.find(id);
+      MagicRoute.to('/products/${uri.pathSegments[1]}', query: uri.queryParameters);
 
-      if (product == null) {
-        MagicRoute.to('/products/not-found');
-        return false;
+      return true;
+    } catch (error) {
+      if (Magic.bound('log')) {
+        Log.error('[ProductDeeplinkHandler] opening $uri failed: $error');
       }
 
-      MagicRoute.to('/products/$id', query: uri.queryParameters);
-      return true;
-    } catch (_) {
       return false;
     }
   }
 }
 ```
 
-Key rules when implementing a custom handler:
-
-- `canHandle` must be **synchronous** and **side-effect free**.
-- `handle` must **never throw**: wrap async operations in try-catch.
-- Return `false` (not throw) when the URI cannot be handled after `canHandle` returned `true`.
-- Trust `payload` only when `source == DeeplinkSource.push`; an `osLink` carries no payload and its URI is attacker-craftable.
+- `canHandle` is synchronous and free of side effects.
+- `handle` never throws; wrap what can fail and return `false`.
+- Read `payload` only when `source == DeeplinkSource.push`.
 
 <a name="registering-handlers"></a>
 ## Registering Handlers
 
-Register handlers on the `DeeplinkManager` singleton via `registerHandler()`. The manager deduplicates registrations: adding the same instance twice has no effect.
+Register on the `DeeplinkManager` singleton. Registering the same instance twice has no effect, and `hasHandler()` and `forgetHandlers()` inspect and clear the list:
 
 ```dart
-final manager = DeeplinkManager();
+import 'package:magic_deeplink/magic_deeplink.dart';
 
-manager.registerHandler(
-  RouteDeeplinkHandler(paths: ['/products/:id', '/shop/*']),
-);
+// ProductDeeplinkHandler is the host's own handler class.
+void main() {
+  final DeeplinkManager manager = DeeplinkManager();
 
-manager.registerHandler(ProductDeeplinkHandler());
-```
-
-The recommended place to register handlers is inside `DeeplinkServiceProvider.boot()`, after the driver is initialized:
-
-```dart
-class DeeplinkServiceProvider extends ServiceProvider {
-  @override
-  Future<void> boot() async {
-    final manager = app.make<DeeplinkManager>('deeplinks');
-
-    manager.registerHandler(
-      RouteDeeplinkHandler(
-        paths: app.make<ConfigRepository>('config').get('deeplink.paths'),
-      ),
-    );
-
-    manager.registerHandler(ProductDeeplinkHandler());
-  }
+  manager.registerHandler(ProductDeeplinkHandler());
+  manager.registerHandler(RouteDeeplinkHandler(paths: ['/products/*', '/shop/*']));
 }
 ```
+
+Do it in your own provider's `boot()`; see [Installation](../getting-started/installation.md#registering-a-route-handler). `DeeplinkServiceProvider` registers no handler of its own.
 
 <a name="handler-execution-order"></a>
 ## Handler Execution Order
 
-Handlers are evaluated in **registration order**. The manager iterates the list and stops at the first handler whose `canHandle` returns `true`:
+Handlers run in registration order, and the manager stops at the first whose `canHandle` is `true`. `handleUri` also emits the URI on `manager.onLink` before the chain runs, so stream listeners see every link whether or not a handler claims it. It returns `false` when no handler does.
 
-```dart
-Future<bool> handleUri(
-  Uri uri, {
-  required DeeplinkSource source,
-  Map<String, dynamic>? payload,
-}) async {
-  for (final handler in _handlers) {
-    if (handler.canHandle(uri)) {
-      return await handler.handle(uri, source: source, payload: payload);
-    }
-  }
-  return false; // No handler claimed the URI
-}
-```
+Register specific handlers before generic ones. A wildcard `RouteDeeplinkHandler` registered first claims URIs a more specific handler registered after it never sees.
 
-Practical implications:
+<a name="gotchas"></a>
+## Gotchas
 
-- **Register specific handlers before generic ones.** A `RouteDeeplinkHandler` with a wildcard pattern (`/products/*`) will consume URIs before a more specific custom handler if registered first.
-- **The manager returns `false`** when no handler claims a URI. Consider registering a catch-all fallback handler last if you want to log or report unhandled links.
-- **`handleUri` also emits to `manager.onLink`** before the handler chain runs, so stream listeners always receive every URI regardless of whether a handler claims it.
+| Mistake | Fix |
+|:--------|:----|
+| No handler is registered. | Links reach the manager and are dropped, with no error. Register one in your provider's `boot()`; `deeplink:doctor` warns when it finds no `registerHandler(` call. |
+| A wildcard handler registered before a specific one. | Order is registration order and the first match wins. Register the specific handler first. |
+| Leaving `hosts` as `null` on `RouteDeeplinkHandler`. | A link on any host whose path matches is claimed. Set `hosts` to your domain. |
+| Reading `payload` or a query value to decide who the user acts as. | Only `source == DeeplinkSource.push` carries a server-authored payload, and a switch never reads the query. Leave tenant changes to `TenantSwitchGate`. |
+| Throwing from `handle`. | Return `false`. The manager does not catch; the provider logs the error and the link is lost. |
+| Reading `*` as one path segment. | `*` matches slashes too. Use `:name` for exactly one segment. |
 
-```dart
-// Specific handler first
-manager.registerHandler(ProductDeeplinkHandler());
+<a name="related-documentation"></a>
+## Related Documentation
 
-// Generic route handler second: won't shadow the specific one
-manager.registerHandler(
-  RouteDeeplinkHandler(paths: ['/products/*', '/shop/*']),
-);
-```
+- [DeeplinkManager](../architecture/deeplink-manager.md): the handler chain and `handleUri`.
+- [Drivers](./drivers.md): where the links come from.
+- [Installation](../getting-started/installation.md): registering a first handler.
+- [Service Provider](../architecture/service-provider.md): how the push bridge is wired and torn down.
+- [Channels in magic_notifications](https://anilcancakir.com/magic_notifications/docs/basics/channels): the push side of the bridge.
+- [Teams in magic_starter](https://anilcancakir.com/magic_starter/docs/basics/teams): the team switcher the tenant sample uses.

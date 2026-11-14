@@ -8,8 +8,9 @@ import 'package:dowel/dowel.dart';
 ///
 /// Driven entirely by the manifest: publishes lib/config/deeplink.dart from
 /// the bundled stub, injects DeeplinkServiceProvider into lib/config/app.dart,
-/// and injects the deeplinkConfig factory into lib/main.dart so the Magic IoC
-/// container resolves the runtime Deeplink facade.
+/// and injects the deeplinkConfig factory into lib/main.dart so the Magic
+/// container has the `deeplink` config the provider reads. There is no
+/// Deeplink facade: `DeeplinkManager()` is the entry point.
 ///
 /// ## Usage
 ///

@@ -3,7 +3,6 @@ Map<String, dynamic> get deeplinkConfig => {
     'enabled': true,
     'driver': 'app_links',
     'domain': 'example.com',
-    'scheme': 'https',
 
     'ios': {
       'team_id': 'YOUR_TEAM_ID',

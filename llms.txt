@@ -1,0 +1,91 @@
+# magic_deeplink
+
+> Deep links for Magic apps: `DeeplinkServiceProvider` wires `app_links` (Universal Links on iOS and macOS, App Links on Android) into a first-match handler chain, `RouteDeeplinkHandler` maps a link's path onto a route with `MagicRoute.to`, tapped pushes from `magic_notifications` enter the same chain, and the `deeplink:install`, `deeplink:generate` and `deeplink:doctor` commands scaffold the config, write the association files and check the install.
+
+**Stack**: Flutter >=3.47.0 · Dart >=3.13.0 · Requires `magic` ^1.0.0 · Runtime deps: `magic`, `app_links`, `dowel` (runs the CLI), `args`. No mocking library.
+
+**Setup**:
+
+```bash
+flutter pub add magic_deeplink
+dart run magic:dowel plugin:install magic_deeplink
+dart run magic:dowel deeplink:doctor
+```
+
+```dart
+import 'package:magic/magic.dart';
+import 'package:magic_deeplink/magic_deeplink.dart';
+
+class AppServiceProvider extends ServiceProvider {
+  AppServiceProvider(super.app);
+
+  @override
+  void register() {}
+
+  @override
+  Future<void> boot() async {
+    // DeeplinkServiceProvider is registered in lib/config/app.dart by plugin:install.
+    DeeplinkManager().registerHandler(
+      RouteDeeplinkHandler(
+        paths: ['/monitors/:id', '/invitations/:token/accept'],
+        hosts: [Config.getOrFail<String>('deeplink.domain')],
+      ),
+    );
+  }
+}
+```
+
+The install does not register a handler and does not finish the native setup (iOS Associated Domains entitlement, Android `autoVerify` intent filter and `flutter_deeplinking_enabled` meta-data inside `<activity>`, the two association files on your domain). Until then a link opens the browser with no error: run `deeplink:doctor`.
+
+## API
+
+- `DeeplinkServiceProvider(app, {driverFactory})`: `register()` binds `DeeplinkManager` under `'deeplinks'`; `boot()` reads `deeplink.enabled` and `deeplink.driver`, wires the driver and one link stream (delivered after the first frame, as `DeeplinkSource.osLink`) and bridges pushes when `app.bound('notifications')`. `dispose()` tears down what `boot()` wired; nothing calls it for you. Not auto-registered: the install adds it to `lib/config/app.dart`.
+- `DeeplinkManager()` (singleton): `registerHandler`, `hasHandler`, `forgetHandlers` (no way to remove one handler), `setDriver`, `forgetDriver`, `driver` (throws `DeeplinkException` with code `NO_DRIVER` when unset), `onLink` (broadcast stream of every URI given to `handleUri`, claimed or not), `handleUri(uri, {required source, payload})` (emits, then offers the URI to handlers in order; answers `false` when none claims it), `getInitialLink()` (cached; the provider never calls it), `reset()` (`@visibleForTesting`).
+- `DeeplinkHandler`: `canHandle(Uri)` (synchronous, side-effect free) and `handle(Uri, {required DeeplinkSource source, Map<String, dynamic>? payload})`, which answers `Future<bool>` and never throws.
+- `DeeplinkSource`: `osLink` (craftable, no payload), `push` (server payload), `manual` (your own call).
+- `RouteDeeplinkHandler({required paths, hosts, caseSensitive = false, tenantGate})`: `:name` matches one segment, `*` anything including slashes, trailing slash dropped; navigates with `MagicRoute.to(uri.path, query: uri.queryParameters)`. `hosts: null` claims any host; set, a relative URI passes and an absolute one needs `http` or `https`, no port, no userinfo and a case-insensitive host match (a blank entry is ignored).
+- `TenantSwitchGate({required currentTenantId, required switchTenant, payloadKey = 'team_id', onSwitched, onSwitchFailed})`: lets a push move the session onto the owning tenant before navigation.
+- `OneSignalDeeplinkHandler`: not a `DeeplinkHandler`. `setup(manager, notifications)` subscribes to `onPushClicked` and calls `handleUri` with `DeeplinkSource.push` and the whole payload; the URI is the first non-empty string under `url`, `deep_link`, `link` or `uri`. The provider wires it; `dispose()` stops it.
+- `DeeplinkDriver`: `name`, `isSupported`, `initialize(config)`, `getInitialLink()`, `onLink`, `dispose()`. `AppLinksDriver` (name `'app_links'`) is the only built-in one.
+- `DeeplinkOpened`, `DeeplinkNavigating`: magic events with breadcrumb data (`deeplink.open`, `deeplink.navigate`) dispatched by `RouteDeeplinkHandler`; they carry the matched pattern, never the path, query or a payload value.
+- `DeeplinkException(message, {code})`.
+- CLI (`package:magic_deeplink/cli.dart`, `MagicDeeplinkDowelProvider`): `deeplink:install` (`--force`, `--dry-run`, `--non-interactive`), `deeplink:generate` (`--output` default `public`, but the doctor looks only under `public/.well-known` or `web/.well-known`, so pass `--output public/.well-known`; `--root`, `--team-id`, `--bundle-id`, `--package-name`, `--sha256-fingerprints`, `--paths` default `/*`; config values are defaults and flags win, except that an explicit `--paths '/*'` is indistinguishable from the default, so it does not override a config `paths` such as `['/invite/*']`), `deeplink:doctor` (`--verbose`, `--remote`).
+- Config `deeplink`: `enabled` (absent means on), `driver`, `domain`, `ios.team_id`, `ios.bundle_id`, `android.package_name`, `android.sha256_fingerprints`, `paths` (written into the AASA `components`, no runtime effect). A `scheme` key, written by earlier installs, is read by nothing.
+
+## Platforms
+
+- `AppLinksDriver.isSupported` is true on Android, iOS and macOS and false on web, Windows and Linux. Where it is false the provider sets no driver on the manager and subscribes to nothing.
+- iOS and Android are covered by `deeplink:install`, `deeplink:doctor` and `deeplink:generate`. The install sets `FlutterDeepLinkingEnabled` to `false` in `Info.plist`; it cannot place the Android `flutter_deeplinking_enabled` meta-data inside `<activity>`, so that one is by hand.
+- macOS is wired by the provider and covered by nothing else: the entitlement is yours to add and `doctor` does not inspect it.
+- Web: the driver is inert, because GoRouter owns the address bar. Address-bar links need `routing.url_strategy` set to `'path'` and a host rewrite of unknown paths to `index.html`. A tapped push with the tab open still routes through the push bridge, which sits outside the `isSupported` gate.
+
+## Rules for agents
+
+- Import only `package:magic_deeplink/magic_deeplink.dart`; everything under `src/` is private. There is no `Deeplink` facade: use `DeeplinkManager()`.
+- Register your own handler in a provider's `boot()`. With none registered a link is dropped and `handleUri` answers `false`, with no error.
+- Set `hosts` on `RouteDeeplinkHandler`; `null` claims a matching path on any host. Register specific handlers before wildcard ones: the first `canHandle` that is `true` wins.
+- `handle` never throws. The manager does not catch, so a throw reaches the provider's logger and the link is lost.
+- Read `payload`, or act on more than the path, only when `source == DeeplinkSource.push`. Move the tenant with `TenantSwitchGate`: only a push may switch, the tenant comes from the payload and never the URI query, and a failed switch does not navigate.
+- `deeplink.enabled: false` wires nothing, the push bridge included. A `deeplink.driver` other than `'app_links'` creates no driver, and the push bridge still runs.
+- The cold-start link arrives on `driver.onLink`. Do not also route `getInitialLink()`: the chain would run twice for one tap.
+- `MagicRoute.to` throws `StateError` until the router is built. A driver of your own that can deliver before the first frame awaits `WidgetsFlutterBinding.ensureInitialized().endOfFrame` once, then calls `handleUri`.
+- `deeplink:generate` skips a platform's file with a warning and exit code `0` when its values are missing; `deeplink:doctor` exits `1` on a failed check and `0` on warnings only. `generate` and `doctor` read `lib/config/deeplink.dart` as text and need single-quoted literals.
+- A green `doctor` is not a working link: no check can prove a device matches your app. Test on a real device.
+- In tests, call `DeeplinkManager().reset()` in `setUp`, and pass `driverFactory:` to `DeeplinkServiceProvider` because the real driver answers `isSupported` from the host.
+
+## Docs
+
+- [Installation](https://anilcancakir.com/magic_deeplink/docs/getting-started/installation.md): add the package, run the installer, register a handler and finish the native setup.
+- [Configuration](https://anilcancakir.com/magic_deeplink/docs/getting-started/configuration.md): the keys of `lib/config/deeplink.dart` and what reads each.
+- [Handlers](https://anilcancakir.com/magic_deeplink/docs/basics/handlers.md): the handler contract, `RouteDeeplinkHandler`, tenant switching, breadcrumb events, the push bridge and custom handlers.
+- [Drivers](https://anilcancakir.com/magic_deeplink/docs/basics/drivers.md): the driver contract, `AppLinksDriver` per platform, web in detail and custom drivers.
+- [CLI](https://anilcancakir.com/magic_deeplink/docs/basics/cli.md): `deeplink:install`, `deeplink:generate` and `deeplink:doctor`, the config merge and gotchas.
+- [DeeplinkManager](https://anilcancakir.com/magic_deeplink/docs/architecture/deeplink-manager.md): the singleton, the handler chain, `handleUri` and the cached initial link.
+- [Service Provider](https://anilcancakir.com/magic_deeplink/docs/architecture/service-provider.md): the boot lifecycle, stream wiring, the push bridge and teardown.
+
+## Links
+
+- [README](https://github.com/anilcancakir/magic_deeplink/blob/master/README.md): install, the handlers, the CLI, the agent rules table.
+- [API reference](https://pub.dev/documentation/magic_deeplink/latest/): generated from the doc comments.
+- [Changelog](https://github.com/anilcancakir/magic_deeplink/blob/master/CHANGELOG.md): what changed in each version.
+- [Source](https://github.com/anilcancakir/magic_deeplink): issues and pull requests.
