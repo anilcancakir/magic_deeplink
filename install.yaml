@@ -3,8 +3,8 @@
 # Deeplink is a Magic-side plugin: install publishes lib/config/deeplink.dart
 # from the bundled stub, registers DeeplinkServiceProvider into the consumer's
 # lib/config/app.dart providers list, and injects the deeplinkConfig factory
-# into lib/main.dart so the Magic IoC container resolves the runtime Deeplink
-# facade.
+# into lib/main.dart so the Magic container has the `deeplink` config the
+# provider reads. There is no Deeplink facade: DeeplinkManager() is the entry.
 #
 # No handler stubs are published at install time: deeplink handler classes are
 # written by hand and registered in a ServiceProvider. The `deeplink:generate`

@@ -56,7 +56,7 @@ Map<String, dynamic> get deeplinkConfig => {
 };
 ```
 
-The stub the installer publishes also writes a `'scheme': 'https'` entry. Nothing in the package reads it, so you can delete it.
+A `'scheme': 'https'` entry in an older published config is read by nothing, so you can delete it.
 
 `lib/main.dart` hands the getter to `Magic.init` as a factory:
 

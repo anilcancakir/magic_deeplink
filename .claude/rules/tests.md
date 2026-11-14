@@ -10,9 +10,9 @@ paths:
 - Mock drivers: override `name`, `isSupported`, `onLink` (return `Stream.empty()`), `initialize()`, `getInitialLink()`
 - Reset singleton state in setUp with `manager.reset()`, which is `@visibleForTesting` and does what the two old calls did plus what they missed: it drops the cached initial link and replaces the `onLink` controller, so a link cached in one test cannot answer in the next
 - Test structure mirrors `lib/src/` exactly: `test/drivers/`, `test/handlers/`, `test/providers/`, `test/exceptions/`, `test/cli/`
-- CLI tests in `test/cli/commands/` — override `getProjectRoot()` and `getStubSearchPaths()` for temp dirs
+- CLI tests in `test/cli/commands/`: override `getProjectRoot()` and `getStubSearchPaths()` for temp dirs
 - Use `group()` for logical grouping by feature/scenario
-- Import from `package:magic_deeplink/src/...` (internal paths) in tests, not barrel — tests need granular access
+- Import from `package:magic_deeplink/src/...` (internal paths) in tests, not barrel: tests need granular access
 - Assertions: `expect()`, `isA<T>()`, `throwsA()`, `isFalse`, `isTrue`, `isNull`, `isNotNull`
 - Stream testing: listen to `manager.onLink`, trigger `handleUri()`, verify emission
 - Provider tests: create `MagicApp.instance`, register provider, verify bindings with `app.make<T>('key')`

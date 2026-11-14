@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+- **The install stub no longer writes `'scheme': 'https'`.** Nothing in the package reads that key, so a project that wants it gone can delete it from `lib/config/deeplink.dart`; new installs simply do not get it. (`assets/stubs/install/deeplink_config.stub`)
+
 ## [1.0.0] - 2026-11-14
 
 ### Changed
