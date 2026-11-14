@@ -90,6 +90,15 @@ class InstallCommand extends DowelInstallCommand {
       ctx.output.info(manifest.postInstall.message!);
     }
 
+    if (result is InstallConflict) {
+      ctx.output.error(
+        'deeplink:install stopped on ${result.conflicts.length} conflicting '
+        'file(s); review them, then re-run with --force.',
+      );
+    } else if (result is InstallError) {
+      ctx.output.error('deeplink:install failed: ${result.error}');
+    }
+
     return result is InstallSuccess || result is InstallDryRun ? 0 : 1;
   }
 }

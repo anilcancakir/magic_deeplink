@@ -207,7 +207,7 @@ An operating system will not hand your app a link until you tell it your app own
 
    The install command applies this key for you (`install.yaml`'s `native.ios.info_plist`), so a fresh `deeplink:install` run needs no manual edit here. Re-check it if your project predates this release, or if something else in your project's `Info.plist` template has since overwritten it.
 
-3. **Host the `apple-app-site-association` file.** Generate it with `dart run magic:dowel deeplink:generate --output ./public` and upload it to `https://<your-domain>/.well-known/apple-app-site-association`, served over HTTPS with no redirect.
+3. **Host the `apple-app-site-association` file.** Generate it with `dart run magic:dowel deeplink:generate --output ./public/.well-known` (the command writes straight into the output directory) and upload it to `https://<your-domain>/.well-known/apple-app-site-association`, served over HTTPS with no redirect.
 
 <a name="android-intent-filter-and-manifest"></a>
 ### Android: Intent Filter and Manifest
@@ -238,7 +238,7 @@ An operating system will not hand your app a link until you tell it your app own
 
    This one is **not** applied by `deeplink:install`. dowel's `XmlEditor` (the shared engine every plugin's `native.android.meta_data` key runs through) inserts `<meta-data>` entries into `<application>`, and Flutter reads this specific key from `<activity>`; automating it through that key would silently write a `<meta-data>` entry Flutter never looks at, passing every check while doing nothing. Add it by hand.
 
-3. **Host the `assetlinks.json` file.** Generate it with `dart run magic:dowel deeplink:generate --output ./public` and upload it to `https://<your-domain>/.well-known/assetlinks.json`. Android verifies it at install time, not at link-click time.
+3. **Host the `assetlinks.json` file.** Generate it with `dart run magic:dowel deeplink:generate --output ./public/.well-known` (the command writes straight into the output directory) and upload it to `https://<your-domain>/.well-known/assetlinks.json`. Android verifies it at install time, not at link-click time.
 
 <a name="verify"></a>
 ## Verify the install before you reach for a device

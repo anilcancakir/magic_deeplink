@@ -64,8 +64,11 @@ dependencies:
 ### 2. Install configuration
 
 ```bash
+dart run magic:dowel plugin:install magic_deeplink
 dart run magic:dowel deeplink:install
 ```
+
+`plugin:install` registers the package's CLI provider in `.dowel/plugins.json`; without it `deeplink:install` does not resolve.
 
 This generates `lib/config/deeplink.dart`, injects `DeeplinkServiceProvider` into `lib/config/app.dart`, and wires the `deeplinkConfig` factory into `lib/main.dart`.
 
