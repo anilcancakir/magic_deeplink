@@ -60,7 +60,7 @@ Requires Dart >=3.13, Flutter >=3.47 and `magic` ^1.0.0. The installer publishes
 ## CLI rules
 
 1. The commands exist only after `plugin:install` registered `MagicDeeplinkDowelProvider`. The package has no `bin/` of its own; run `dart run magic:dowel deeplink:<command>`.
-2. `deeplink:generate` takes each value from a flag first and `lib/config/deeplink.dart` second. It writes `apple-app-site-association` when `team_id` and `bundle_id` resolve and `assetlinks.json` when `package_name` and `sha256_fingerprints` resolve; a platform with missing values is skipped with a warning and exit code `0`. The `--paths` default `/*` yields to the config's `paths`, so a hand-typed `--paths '/*'` cannot override them.
+2. `deeplink:generate` takes each value from a flag first and `lib/config/deeplink.dart` second. It writes `apple-app-site-association` when `team_id` and `bundle_id` resolve and `assetlinks.json` when `package_name` and `sha256_fingerprints` resolve; a platform with missing values is skipped with a warning and exit code `0`. The one exception is `--paths`: an explicit `--paths '/*'` is indistinguishable from the default, so it does not override a config `paths` such as `['/invite/*']`.
 3. `deeplink:doctor` reads the project and exits `1` when a check fails and `0` when only warnings were raised. `--remote` also fetches both association files from the live domain and requires `deeplink.domain`. It cannot prove that a device matches a link to your app.
 4. Generate into the folder the doctor looks in: `--output public/.well-known` or `web/.well-known`.
 

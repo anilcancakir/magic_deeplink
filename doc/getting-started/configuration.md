@@ -63,7 +63,9 @@ A `'scheme': 'https'` entry in an older published config is read by nothing, so 
 ```dart
 import 'package:magic/magic.dart';
 
-// appConfig and deeplinkConfig are the host's own, from lib/config/.
+import 'config/app.dart';
+import 'config/deeplink.dart'; // added by the install
+
 Future<void> main() async {
   await Magic.init(
     configFactories: [

@@ -116,7 +116,7 @@ driver.onLink.listen((uri) {
 });
 ```
 
-`_deliver` awaits `firstFrame`, then calls `manager.handleUri(uri, source: DeeplinkSource.osLink)` inside a `try` and `catch` that reports a failure through `Log` (guarded by `Magic.bound('log')`) instead of letting it escape as an unhandled async error. Universal Links on iOS and App Links on Android take this one path, fanning out to every registered handler and emitting on `manager.onLink`.
+`_deliver` awaits `firstFrame`, then calls `manager.handleUri(uri, source: DeeplinkSource.osLink)` inside a `try` and `catch` that reports a failure through `Log` (guarded by `Magic.bound('log')`) instead of letting it escape as an unhandled async error. Universal Links on iOS and App Links on Android take this one path. `handleUri` emits the URI on `manager.onLink`, then walks the registered handlers in registration order and returns after the first one whose `canHandle` succeeds: later handlers never receive that URI, so register the most specific handler first.
 
 <a name="initial-link-handling"></a>
 ### Initial Link Handling

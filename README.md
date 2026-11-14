@@ -216,7 +216,7 @@ The package has no `bin/` of its own. After `plugin:install`, your app's dowel l
 | Command | Does |
 |---------|------|
 | `dart run magic:dowel deeplink:install` | Runs the manifest again; `--force` overwrites a `deeplink.dart` the installer did not write, `--dry-run` prints without writing. |
-| `dart run magic:dowel deeplink:generate --output public/.well-known` | Writes `apple-app-site-association` and `assetlinks.json` from the config; `--team-id`, `--bundle-id`, `--package-name`, `--sha256-fingerprints` and `--paths` override it. |
+| `dart run magic:dowel deeplink:generate --output public/.well-known` | Writes `apple-app-site-association` and `assetlinks.json` from the config; `--team-id`, `--bundle-id`, `--package-name`, `--sha256-fingerprints` and `--paths` override it, except that an explicit `--paths '/*'` is indistinguishable from the default, so it does not override a config `paths` such as `['/invite/*']`. |
 | `dart run magic:dowel deeplink:doctor` | Checks the config, the Dart wiring, the iOS and Android projects and the association files; `--remote` also fetches both from the live domain, `--verbose` adds detail. |
 
 `generate` skips a file, with a warning and exit code `0`, when its platform's values are missing. `doctor` exits `1` when a check fails and `0` when only warnings were raised. It cannot prove that a real device matches a link to your app: test on one.
