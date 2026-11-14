@@ -5,8 +5,15 @@ import 'package:dowel/dowel.dart';
 /// CLI command to generate deep link server-side configuration files.
 ///
 /// Produces `apple-app-site-association` (iOS Universal Links) and
-/// `assetlinks.json` (Android App Links) from values supplied as CLI options.
-/// No hardcoded values — all config must be passed via flags.
+/// `assetlinks.json` (Android App Links). Each value comes from its flag
+/// first and from `lib/config/deeplink.dart` second, so a project that keeps
+/// its identifiers in the config runs the command with no flags. The one
+/// exception is `--paths '/*'`: it equals the flag's default, so the command
+/// cannot tell it from an omitted flag and the paths in the config replace it.
+///
+/// The files land directly in `--output`, which defaults to `public`. The
+/// doctor searches only `web/.well-known` and `public/.well-known`, so pass
+/// `--output public/.well-known` (or `web/.well-known`) for it to find them.
 ///
 /// ## Usage
 ///
@@ -16,7 +23,7 @@ import 'package:dowel/dowel.dart';
 ///   --bundle-id your.package.name \
 ///   --package-name your.package.name \
 ///   --sha256-fingerprints AA:BB:CC:... \
-///   --output public
+///   --output public/.well-known
 /// ```
 class GenerateCommand extends DowelCommand {
   @override
@@ -109,7 +116,7 @@ class GenerateCommand extends DowelCommand {
     // 5. Detect iOS platform via PlatformHelper — inform user about AASA placement.
     if (PlatformHelper.hasPlatform(effectiveRoot, 'ios')) {
       ctx.output.info(
-        'iOS platform detected — upload apple-app-site-association to your web server root.',
+        'iOS platform detected: upload apple-app-site-association to your web server root.',
       );
     }
 
@@ -120,7 +127,7 @@ class GenerateCommand extends DowelCommand {
       ctx.output.success('Created $outputPath/apple-app-site-association');
     } else {
       ctx.output.warning(
-        'Skipping apple-app-site-association — provide --team-id and --bundle-id.',
+        'Skipping apple-app-site-association: provide --team-id and --bundle-id.',
       );
     }
 
@@ -131,7 +138,7 @@ class GenerateCommand extends DowelCommand {
       ctx.output.success('Created $outputPath/assetlinks.json');
     } else {
       ctx.output.warning(
-        'Skipping assetlinks.json — provide --package-name and --sha256-fingerprints.',
+        'Skipping assetlinks.json: provide --package-name and --sha256-fingerprints.',
       );
     }
 

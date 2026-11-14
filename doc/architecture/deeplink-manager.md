@@ -46,21 +46,9 @@ void main() {
 <a name="singleton-pattern"></a>
 ## Singleton Pattern
 
-The manager is a process-wide singleton behind a private named constructor:
+The manager is a process-wide singleton. Every `DeeplinkManager()` call returns the same instance, and the provider also binds it in the container under `'deeplinks'`. Nothing creates a second one, so handlers and a driver set through one reference are visible through every other.
 
-```dart
-class DeeplinkManager {
-  static final DeeplinkManager _instance = DeeplinkManager._internal();
-
-  factory DeeplinkManager() => _instance;
-
-  DeeplinkManager._internal();
-}
-```
-
-Every `DeeplinkManager()` returns the same instance, and the provider also binds it in the container under `'deeplinks'`.
-
-**Testing reset.** The singleton persists across tests. `forgetHandlers()` and `forgetDriver()` alone leave the cached initial link behind, so a second `getInitialLink()` answers the previous test's URI without reaching the driver, and they leave the broadcast controller behind `onLink` in place. `reset()` clears both, along with the handlers and the driver:
+**Testing reset.** The singleton persists across tests. `forgetHandlers()` and `forgetDriver()` alone leave the cached initial link behind, so a second `getInitialLink()` answers the previous test's URI without reaching the driver, and they leave the broadcast controller behind `onLink` in place. `reset()` clears both, along with the handlers and the driver. Call it in `setUp` so a test starts clean, and in `tearDown` so nothing leaks into the next one:
 
 ```dart
 import 'package:flutter_test/flutter_test.dart';
@@ -68,6 +56,10 @@ import 'package:magic_deeplink/magic_deeplink.dart';
 
 void main() {
   setUp(() {
+    DeeplinkManager().reset();
+  });
+
+  tearDown(() {
     DeeplinkManager().reset();
   });
 }
@@ -134,10 +126,10 @@ A handler already in the list, by identity, is ignored. `hasHandler(handler)` an
 ## URI Stream
 
 ```dart
-Stream<Uri> get onLink => _linkController.stream;
+Stream<Uri> get onLink;
 ```
 
-The controller is a `StreamController<Uri>.broadcast()`, so analytics, routing and tests can subscribe independently. It is never closed during normal operation and lives as long as the singleton; only `reset()` closes it and replaces it, after which `onLink` hands out the new stream.
+`onLink` is a broadcast stream, so analytics, routing and tests can subscribe independently. It is never closed during normal operation and lives as long as the singleton; only `reset()` closes it and replaces it, after which `onLink` hands out the new stream.
 
 <a name="handleuri-flow"></a>
 ## handleUri Flow
@@ -147,15 +139,7 @@ Future<bool> handleUri(
   Uri uri, {
   required DeeplinkSource source,
   Map<String, dynamic>? payload,
-}) async {
-  _linkController.add(uri);
-  for (final handler in _handlers) {
-    if (handler.canHandle(uri)) {
-      return await handler.handle(uri, source: source, payload: payload);
-    }
-  }
-  return false;
-}
+});
 ```
 
 1. **Emit.** The URI goes onto `onLink` before any handler runs, so every subscriber sees every URI, handled or not.
@@ -169,20 +153,12 @@ Future<bool> handleUri(
 `getInitialLink()` asks the driver for the link that launched the app and caches the answer, including `null`, so later calls skip the driver:
 
 ```dart
-Future<Uri?> getInitialLink() async {
-  if (_initialLinkFetched) {
-    return _initialLink;
-  }
-
-  _initialLink = await driver.getInitialLink();
-  _initialLinkFetched = true;
-  return _initialLink;
-}
+Future<Uri?> getInitialLink();
 ```
 
 | State | Behaviour |
 |:------|:----------|
-| First call | Delegates to `driver.getInitialLink()`, stores the result and sets the flag. |
+| First call | Delegates to `driver.getInitialLink()` and remembers the answer, `null` included. |
 | Later calls | Returns the cached value without touching the driver. |
 
 The provider does not call this method: `app_links` serves the cold-start link as the first emission of `onLink`, and routing it from both places would run the handler chain twice for one tap. It stays on the manager for a consumer that wants to ask directly. `forgetDriver()` does not clear the cache; `reset()` does.
@@ -207,9 +183,9 @@ DeeplinkServiceProvider.boot()
             ▼
         manager.handleUri(uri, source: DeeplinkSource.osLink)
                 │
-                ├─ _linkController.add(uri)      ──► onLink stream subscribers
+                ├─ emit the uri                  ──► onLink stream subscribers
                 │
-                └─ iterate _handlers in order
+                └─ iterate the handlers in registration order
                         │
                         ├─ handler.canHandle(uri) == false  ──► next handler
                         │

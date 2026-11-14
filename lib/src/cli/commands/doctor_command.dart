@@ -132,7 +132,12 @@ class DoctorCommand extends DowelCommand {
     ctx.output.writeln('');
     ctx.output.warning('Issues detected. Run the following to fix:');
     ctx.output.writeln('  • Install: dart run magic:dowel deeplink:install');
-    ctx.output.writeln('  • Generate: dart run magic:dowel deeplink:generate');
+    // The doctor searches web/.well-known and public/.well-known, and
+    // generate defaults to public, so the hint names the directory itself.
+    ctx.output.writeln(
+      '  • Generate: dart run magic:dowel deeplink:generate '
+      '--output public/.well-known',
+    );
     return 1;
   }
 
@@ -988,7 +993,7 @@ class DoctorCommand extends DowelCommand {
     RemoteCheckResult? remoteResult,
   }) {
     final buffer = StringBuffer();
-    buffer.writeln('Magic Deeplink — Doctor Report');
+    buffer.writeln('Magic Deeplink: Doctor Report');
     buffer.writeln('=' * 50);
     buffer.writeln();
 
@@ -1001,7 +1006,7 @@ class DoctorCommand extends DowelCommand {
 
     buffer.writeln('Config Validation:');
     if (!configExists) {
-      buffer.writeln('  ✗ Skipped — config file missing');
+      buffer.writeln('  ✗ Skipped: config file missing');
     } else {
       final configIssues = validateConfig();
       if (configIssues.isEmpty) {
@@ -1099,7 +1104,7 @@ class DoctorCommand extends DowelCommand {
     buffer.writeln();
     buffer.writeln(
       'Note: no local check can prove a device actually matches this link. '
-      '`swcutil verify` needs root and Android verifies at install time — the '
+      '`swcutil verify` needs root and Android verifies at install time, so the '
       'last mile is always a real device.',
     );
 

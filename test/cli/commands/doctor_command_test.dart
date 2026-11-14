@@ -5,6 +5,7 @@ import 'dart:io';
 // deeplink-specific DoctorCommand below.
 import 'package:dowel/dowel.dart';
 import 'package:magic_deeplink/src/cli/commands/doctor_command.dart';
+import 'package:magic_deeplink/src/cli/commands/generate_command.dart';
 import 'package:test/test.dart';
 
 /// Test double that overrides [getProjectRoot] to use a temp directory.
@@ -15,6 +16,36 @@ class _TestDoctorCommand extends DoctorCommand {
 
   @override
   String getProjectRoot() => _root;
+}
+
+/// Test double that runs `deeplink:generate` against a temp directory.
+class _TestGenerateCommand extends GenerateCommand {
+  final String _root;
+
+  _TestGenerateCommand(this._root);
+
+  @override
+  String getProjectRoot() => _root;
+}
+
+/// Runs `deeplink:generate --output [output]` in [tempDir], values from the
+/// config [_writeValidConfig] wrote.
+Future<void> _generate(Directory tempDir, String output) async {
+  final generate = _TestGenerateCommand(tempDir.path);
+  await generate.handle(
+    DowelContext.bare(
+      MapInput({
+        'output': output,
+        'root': '.',
+        'team-id': '',
+        'bundle-id': '',
+        'package-name': '',
+        'sha256-fingerprints': <String>[],
+        'paths': <String>['/*'],
+      }, signature: generate.parsedSignature),
+      BufferedOutput(),
+    ),
+  );
 }
 
 /// Test double that fails the test if a remote fetch is ever attempted,
@@ -890,6 +921,40 @@ Map<String, dynamic> get appConfig => {
         BufferedOutput(),
       );
       expect(await command.handle(ctx), 1);
+    });
+
+    test('the generate hint writes where the doctor looks', () async {
+      _writeValidConfig(tempDir);
+      List<String> missingAssociations() => command
+          .getMissingRequirements()
+          .where((issue) => issue.startsWith('[associations]'))
+          .toList();
+
+      // 1. The default output directory is not one the doctor searches.
+      await _generate(tempDir, 'public');
+      expect(missingAssociations(), isNotEmpty);
+
+      // 2. The directory the hint names is.
+      await _generate(tempDir, 'public/.well-known');
+      expect(missingAssociations(), isEmpty);
+
+      // 3. The doctor prints that exact command.
+      Directory('${tempDir.path}/public').deleteSync(recursive: true);
+      final output = BufferedOutput();
+      final ctx = DowelContext.bare(
+        MapInput({
+          'verbose': false,
+          'remote': false,
+        }, signature: command.parsedSignature),
+        output,
+      );
+      expect(await command.handle(ctx), 1);
+      expect(
+        output.content,
+        contains(
+          'dart run magic:dowel deeplink:generate --output public/.well-known',
+        ),
+      );
     });
 
     test('a warning-only project exits 0', () async {

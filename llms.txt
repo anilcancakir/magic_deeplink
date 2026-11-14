@@ -71,7 +71,7 @@ The install does not register a handler and does not finish the native setup (iO
 - `MagicRoute.to` throws `StateError` until the router is built. A driver of your own that can deliver before the first frame awaits `WidgetsFlutterBinding.ensureInitialized().endOfFrame` once, then calls `handleUri`.
 - `deeplink:generate` skips a platform's file with a warning and exit code `0` when its values are missing; `deeplink:doctor` exits `1` on a failed check and `0` on warnings only. `generate` and `doctor` read `lib/config/deeplink.dart` as text and need single-quoted literals.
 - A green `doctor` is not a working link: no check can prove a device matches your app. Test on a real device.
-- In tests, call `DeeplinkManager().reset()` in `setUp`, and pass `driverFactory:` to `DeeplinkServiceProvider` because the real driver answers `isSupported` from the host.
+- In tests, call `DeeplinkManager().reset()` in `setUp` and `tearDown`, and pass `driverFactory:` to `DeeplinkServiceProvider` because the real driver answers `isSupported` from the host.
 
 ## Docs
 

@@ -15,6 +15,16 @@ All notable changes to this project will be documented in this file.
 - **The README and the `doc/` pages are rewritten.** Each follows the standard page shape, and a checker in `tool/` keeps the pages consistent. (`README.md`, `doc/`, `tool/check-docs.py`)
 - **The post-install message points `deeplink:generate` at `public/.well-known` and lists `deeplink:doctor`.** It said `--output ./public`, which writes the association files where the doctor does not look. Its handler sample now sets `hosts`, as the README does. (`install.yaml`)
 - **The install stub no longer writes `'scheme': 'https'`.** Nothing in the package reads that key, so a project that wants it gone can delete it from `lib/config/deeplink.dart`; new installs simply do not get it. (`assets/stubs/install/deeplink_config.stub`)
+- **The CLI messages no longer carry em dashes.** `deeplink:generate` and `deeplink:doctor` use a colon or a comma instead. (`lib/src/cli/commands/generate_command.dart`, `lib/src/cli/commands/doctor_command.dart`)
+- **The pubspec comment on the `magic` floor names the current reason only.** (`pubspec.yaml`)
+- **The agent skill listing is shorter.** (`skills/magic-deeplink/`)
+
+### Fixed
+- **The fix hint of `deeplink:doctor` now writes where the doctor looks.** It printed `deeplink:generate` with no `--output`, which writes to `public/`, a folder the doctor does not search, so following the hint left the same failure. It now prints `deeplink:generate --output public/.well-known`. (`lib/src/cli/commands/doctor_command.dart`)
+- **The `deeplink:generate` doc comment says where its values come from.** It claimed every value had to be passed as a flag; a flag wins, and `lib/config/deeplink.dart` fills the rest; the one exception is `--paths '/*'`, which equals the default and so gives way to the configured paths. Its example uses `--output public/.well-known`. (`lib/src/cli/commands/generate_command.dart`)
+- **The architecture pages describe behaviour instead of quoting private fields.** The `DeeplinkManager` and service provider pages no longer show `_instance`, `_linkController`, `_initialLinkFetched`, `_deliver`, `_pushClicks` or `_disposed`. (`doc/architecture/`)
+- **The `AppLinksDriver` sample uses the initial link it reads**, so it no longer raises `unused_local_variable`. (`doc/basics/drivers.md`)
+- **Every file gives the same test reset advice:** call `DeeplinkManager().reset()` in `setUp` and in `tearDown`. (`README.md`, `llms.txt`, `doc/architecture/deeplink-manager.md`)
 
 ## [1.0.0] - 2026-11-14
 
