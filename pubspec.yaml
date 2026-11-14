@@ -1,17 +1,15 @@
 name: magic_deeplink
-description: Deep linking support for Magic Framework (Universal Links, App Links).
+description: "Open the right Magic route from Universal Links, App Links and push taps: config-driven handlers plus a CLI that generates the association files."
 version: 1.0.0
-homepage: https://magic.fluttersdk.com/deeplink
-documentation: https://magic.fluttersdk.com/packages/deeplink/getting-started/installation
-repository: https://github.com/fluttersdk/magic_deeplink
-issue_tracker: https://github.com/fluttersdk/magic_deeplink/issues
+homepage: https://anilcancakir.com/magic_deeplink
+repository: https://github.com/anilcancakir/magic_deeplink
+issue_tracker: https://github.com/anilcancakir/magic_deeplink/issues
 
 topics:
   - deeplink
   - universal-links
   - app-links
-  - magic
-  - flutter
+  - magic-framework
 
 environment:
   sdk: ">=3.13.0 <4.0.0"
