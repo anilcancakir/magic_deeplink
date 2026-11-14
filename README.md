@@ -245,7 +245,7 @@ Rules for an agent writing code against this package. Each one is a mistake that
 | Run `deeplink:doctor` before reaching for a device | A wrong entitlement, intent filter or association file all end in a link that opens the browser. |
 | Reach the manager as `DeeplinkManager()` | There is no `Deeplink` facade. |
 | Do not route `getInitialLink()` as well as listening to `onLink` | `app_links` delivers the cold-start link on the stream, so the handler chain would run twice for one tap. |
-| In a test, call `DeeplinkManager().reset()` in `setUp` | The singleton keeps its handlers, driver and cached initial link across tests. |
+| In a test, call `DeeplinkManager().reset()` in `setUp` and `tearDown` | The singleton keeps its handlers, driver and cached initial link across tests: `setUp` starts clean, `tearDown` leaves nothing for the next test. |
 
 ## Dependencies
 

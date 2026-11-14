@@ -72,6 +72,10 @@ Future<void> main() async {
   await driver.initialize({});
 
   final Uri? initial = await driver.getInitialLink();
+  if (initial != null) {
+    // The link that launched the app.
+  }
+
   driver.onLink.listen((Uri uri) {
     // Links received while the app runs.
   });

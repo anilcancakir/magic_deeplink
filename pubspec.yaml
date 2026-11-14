@@ -18,18 +18,9 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  # TWO reasons stacked, and they answer different questions.
-  #
-  # The floor cannot go below 0.0.8: `MagicApp.register` returns `void` there
-  # and `Future<void>` from 0.0.8 on, and this package's suite awaits it, so
-  # at `^0.0.5` the library analyzed clean while the tests did not compile.
-  #
-  # It sits at 0.0.22 because `DeeplinkOpened` and `DeeplinkNavigating`
-  # implement `ReportsBreadcrumb`, which 0.0.22 introduces. 0.0.14 is where an
-  # unresolvable route middleware alias stops the app at `Magic.init` instead
-  # of leaving the route ungated, which is a breaking change a consumer of
-  # this package inherits. The floor names 1.0.0, the first stable release,
-  # which also moved the optional layers out of core into plugin packages.
+  # The floor names magic 1.0.0, the first stable release, so `^1.0.0` takes
+  # every 1.x release. `DeeplinkOpened` and `DeeplinkNavigating` implement its
+  # `ReportsBreadcrumb`.
   magic: ^1.0.0
   dowel: ^1.0.0
   app_links: ^7.2.2

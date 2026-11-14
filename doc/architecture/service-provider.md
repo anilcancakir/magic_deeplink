@@ -106,17 +106,7 @@ A driver that answers `false` is never handed to the manager and never initialis
 <a name="stream-wiring"></a>
 ### Stream Wiring
 
-After initialisation the provider subscribes to `driver.onLink` and delivers each URI once the first frame has rendered:
-
-```dart
-final firstFrame = WidgetsFlutterBinding.ensureInitialized().endOfFrame;
-
-driver.onLink.listen((uri) {
-  unawaited(_deliver(manager, uri, firstFrame));
-});
-```
-
-`_deliver` awaits `firstFrame`, then calls `manager.handleUri(uri, source: DeeplinkSource.osLink)` inside a `try` and `catch` that reports a failure through `Log` (guarded by `Magic.bound('log')`) instead of letting it escape as an unhandled async error. Universal Links on iOS and App Links on Android take this one path. `handleUri` emits the URI on `manager.onLink`, then walks the registered handlers in registration order and returns after the first one whose `canHandle` succeeds: later handlers never receive that URI, so register the most specific handler first.
+After initialisation the provider subscribes to `driver.onLink` and delivers each URI once the first frame has rendered. It captures `WidgetsFlutterBinding.ensureInitialized().endOfFrame` once and hands each URI to a delivery step that awaits that future, then calls `manager.handleUri(uri, source: DeeplinkSource.osLink)` inside a `try` and `catch` that reports a failure through `Log` (guarded by `Magic.bound('log')`) instead of letting it escape as an unhandled async error. Universal Links on iOS and App Links on Android take this one path. `handleUri` emits the URI on `manager.onLink`, then walks the registered handlers in registration order and returns after the first one whose `canHandle` succeeds: later handlers never receive that URI, so register the most specific handler first.
 
 <a name="initial-link-handling"></a>
 ### Initial Link Handling
@@ -125,7 +115,7 @@ A cold start from a link needs no separate read: `app_links` serves the launch l
 
 The delivery waits because the router does not exist yet at boot: `MagicRoute.to` throws a `StateError` until the app builds the router, which happens while the first frame is built. `endOfFrame` names that event instead of guessing a duration, and it schedules a frame when the scheduler is idle, so a link delivered to an application nobody is drawing is not left waiting. The future is captured once, before the first link can arrive, so awaiting deliveries resume in the order they arrived.
 
-A cold-start link that arrives while a provider registered after this one is still booting can resume against a router that is not built; the `catch` in `_deliver` then logs the `StateError` rather than losing the link silently.
+A cold-start link that arrives while a provider registered after this one is still booting can resume against a router that is not built; the `catch` around the delivery then logs the `StateError` rather than losing the link silently.
 
 <a name="onesignal-handler-setup"></a>
 ### OneSignal Handler Setup
@@ -138,7 +128,7 @@ if (app.bound('notifications')) {
 
   try {
     handler.setup(manager, app.make('notifications'));
-    _pushClicks = handler;
+    // Kept so that dispose() can reach it.
   } catch (error) {
     handler.dispose();
 
@@ -152,7 +142,7 @@ if (app.bound('notifications')) {
 }
 ```
 
-The handler is held in `_pushClicks` so `dispose()` can reach it. `setup()` takes the notification manager and subscribes to its `onPushClicked` stream, which the manager owns from construction. Only the `'notifications'` binding has to exist at this point, never a resolved push driver, so provider order does not matter. The handler reads a URI from the payload keys `url`, `deep_link`, `link` and `uri`, and calls `manager.handleUri(uri, source: DeeplinkSource.push, payload: data)` with the whole payload. This block sits outside the `isSupported` gate, so it runs on the web too.
+The provider keeps the handler so `dispose()` can reach it. `setup()` takes the notification manager and subscribes to its `onPushClicked` stream, which the manager owns from construction. Only the `'notifications'` binding has to exist at this point, never a resolved push driver, so provider order does not matter. The handler reads a URI from the payload keys `url`, `deep_link`, `link` and `uri`, and calls `manager.handleUri(uri, source: DeeplinkSource.push, payload: data)` with the whole payload. This block sits outside the `isSupported` gate, so it runs on the web too.
 
 <a name="optional-dependency-handling"></a>
 ## Optional Dependency Handling
@@ -168,7 +158,7 @@ The `catch` names what failed and then lets boot continue. Follow the same patte
 <a name="provider-teardown"></a>
 ## Provider Teardown
 
-`DeeplinkServiceProvider.dispose()` drops everything `boot()` wired: the push-click handler, the driver's link subscription, the driver itself, and the manager's reference to it through `DeeplinkManager.forgetDriver()`. `_deliver` checks a `_disposed` flag once its wait for the first frame ends, before it hands the link over, since a delivery waiting on `endOfFrame` has no handle a teardown could cancel.
+`DeeplinkServiceProvider.dispose()` drops everything `boot()` wired: the push-click handler, the driver's link subscription, the driver itself, and the manager's reference to it through `DeeplinkManager.forgetDriver()`. A delivery that is still waiting on `endOfFrame` checks, once the wait ends and before it hands the link over, whether the provider was disposed, since it has no handle a teardown could cancel.
 
 ```dart
 import 'package:magic_deeplink/magic_deeplink.dart';
