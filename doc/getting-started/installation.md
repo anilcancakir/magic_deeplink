@@ -63,6 +63,7 @@ After the install, `DeeplinkServiceProvider` is in your providers list:
 import 'package:magic/magic.dart';
 import 'package:magic_deeplink/magic_deeplink.dart';
 
+// RouteServiceProvider and AppServiceProvider are the host's own providers.
 final appConfig = {
   'app': {
     'providers': [
@@ -77,12 +78,17 @@ final appConfig = {
 and `lib/main.dart` passes the config factory to `Magic.init`:
 
 ```dart
-await Magic.init(
-  configFactories: [
-    () => appConfig,
-    () => deeplinkConfig, // added by the install
-  ],
-);
+import 'package:magic/magic.dart';
+
+// appConfig and deeplinkConfig are the host's own, from lib/config/.
+Future<void> main() async {
+  await Magic.init(
+    configFactories: [
+      () => appConfig,
+      () => deeplinkConfig, // added by the install
+    ],
+  );
+}
 ```
 
 The provider binds `DeeplinkManager` as a singleton under the `'deeplinks'` key, so `app.make<DeeplinkManager>('deeplinks')` resolves it anywhere.

@@ -22,11 +22,15 @@
 `DeeplinkServiceProvider` creates and wires the manager during boot, so consuming code rarely needs more than the singleton:
 
 ```dart
-final DeeplinkManager manager = DeeplinkManager();
+import 'package:magic_deeplink/magic_deeplink.dart';
 
-manager.onLink.listen((Uri uri) {
-  print('Received: $uri');
-});
+void main() {
+  final DeeplinkManager manager = DeeplinkManager();
+
+  manager.onLink.listen((Uri uri) {
+    // Your own code goes here, for instance a call to your analytics.
+  });
+}
 ```
 
 | Member | Purpose |
@@ -59,9 +63,14 @@ Every `DeeplinkManager()` returns the same instance, and the provider also binds
 **Testing reset.** The singleton persists across tests. `forgetHandlers()` and `forgetDriver()` alone leave the cached initial link behind, so a second `getInitialLink()` answers the previous test's URI without reaching the driver, and they leave the broadcast controller behind `onLink` in place. `reset()` clears both, along with the handlers and the driver:
 
 ```dart
-setUp(() {
-  DeeplinkManager().reset();
-});
+import 'package:flutter_test/flutter_test.dart';
+import 'package:magic_deeplink/magic_deeplink.dart';
+
+void main() {
+  setUp(() {
+    DeeplinkManager().reset();
+  });
+}
 ```
 
 <a name="driver-orchestration"></a>
@@ -105,7 +114,13 @@ The manager keeps an ordered `List<DeeplinkHandler>`. A URI is offered in regist
 ### Registering Handlers
 
 ```dart
-manager.registerHandler(RouteDeeplinkHandler(paths: ['/products/:id']));
+import 'package:magic_deeplink/magic_deeplink.dart';
+
+void main() {
+  final DeeplinkManager manager = DeeplinkManager();
+
+  manager.registerHandler(RouteDeeplinkHandler(paths: ['/products/:id']));
+}
 ```
 
 A handler already in the list, by identity, is ignored. `hasHandler(handler)` answers whether that exact instance is registered. The handler contract is in [Handlers](../basics/handlers.md#the-deeplinkhandler-contract).
@@ -146,7 +161,7 @@ Future<bool> handleUri(
 1. **Emit.** The URI goes onto `onLink` before any handler runs, so every subscriber sees every URI, handled or not.
 2. **Dispatch.** The first handler whose `canHandle(uri)` is `true` receives `source` and `payload` and its answer is returned. When none matches, the result is `false`.
 
-`source` and `payload` are required at the call site because they cannot be recovered from the URI. The provider's driver subscription passes `DeeplinkSource.osLink` and no payload; `OneSignalDeeplinkHandler` passes `DeeplinkSource.push` and the whole notification payload. See [DeeplinkSource](../basics/handlers.md#deeplinksource).
+`source` is required at the call site and `payload` is optional, because neither can be recovered from the URI. The provider's driver subscription passes `DeeplinkSource.osLink` and no payload; `OneSignalDeeplinkHandler` passes `DeeplinkSource.push` and the whole notification payload. See [DeeplinkSource](../basics/handlers.md#deeplinksource).
 
 <a name="initial-link-caching"></a>
 ## Initial Link Caching

@@ -6,7 +6,7 @@ paths:
 # Testing Domain
 
 - Mock via contract inheritance (no mockito): `class MockDeeplinkDriver extends DeeplinkDriver { ... }`
-- Mock handlers: constructor params `canHandleValue` / `handleValue` control behavior, `handleCalled` flag for assertion
+- Mock handlers: constructor params `canHandleValue` / `handleValue` control behaviour, `handleCalled` flag for assertion
 - Mock drivers: override `name`, `isSupported`, `onLink` (return `Stream.empty()`), `initialize()`, `getInitialLink()`
 - Reset singleton state in setUp with `manager.reset()`, which is `@visibleForTesting` and does what the two old calls did plus what they missed: it drops the cached initial link and replaces the `onLink` controller, so a link cached in one test cannot answer in the next
 - Test structure mirrors `lib/src/` exactly: `test/drivers/`, `test/handlers/`, `test/providers/`, `test/exceptions/`, `test/cli/`

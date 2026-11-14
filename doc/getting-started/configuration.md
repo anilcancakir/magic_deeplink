@@ -61,12 +61,17 @@ A `'scheme': 'https'` entry in an older published config is read by nothing, so 
 `lib/main.dart` hands the getter to `Magic.init` as a factory:
 
 ```dart
-await Magic.init(
-  configFactories: [
-    () => appConfig,
-    () => deeplinkConfig,
-  ],
-);
+import 'package:magic/magic.dart';
+
+// appConfig and deeplinkConfig are the host's own, from lib/config/.
+Future<void> main() async {
+  await Magic.init(
+    configFactories: [
+      () => appConfig,
+      () => deeplinkConfig,
+    ],
+  );
+}
 ```
 
 > [!NOTE]

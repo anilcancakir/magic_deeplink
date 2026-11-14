@@ -131,7 +131,7 @@ void _writeIosProject(
 /// `http`/`https` schemes and a host matching [domain].
 ///
 /// [deepLinkingInApplication] moves the meta-data to the `<application>`
-/// element instead — the failure mode the command exists to catch.
+/// element instead: the failure mode the command exists to catch.
 void _writeAndroidManifest(
   Directory tempDir, {
   String domain = 'app.example.com',
@@ -620,7 +620,7 @@ Map<String, dynamic> get appConfig => {
   });
 
   // ---------------------------------------------------------------------------
-  // 5 + 6: Android setup — this is THE case the command exists for
+  // 5 + 6: Android setup: this is THE case the command exists for
   // ---------------------------------------------------------------------------
 
   group('Android setup', () {
@@ -675,7 +675,7 @@ Map<String, dynamic> get appConfig => {
       expect(status['configured'], isFalse);
     });
 
-    test('flags flutter_deeplinking_enabled placed in <application> instead of <activity> — '
+    test('flags flutter_deeplinking_enabled placed in <application> instead of <activity>: '
         'a grep for the tag name cannot see this, only tree position can', () {
       _writeValidConfig(tempDir);
       _writeAndroidManifest(tempDir, deepLinkingInApplication: true);

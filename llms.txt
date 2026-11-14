@@ -49,7 +49,7 @@ The install does not register a handler and does not finish the native setup (iO
 - `DeeplinkDriver`: `name`, `isSupported`, `initialize(config)`, `getInitialLink()`, `onLink`, `dispose()`. `AppLinksDriver` (name `'app_links'`) is the only built-in one.
 - `DeeplinkOpened`, `DeeplinkNavigating`: magic events with breadcrumb data (`deeplink.open`, `deeplink.navigate`) dispatched by `RouteDeeplinkHandler`; they carry the matched pattern, never the path, query or a payload value.
 - `DeeplinkException(message, {code})`.
-- CLI (`package:magic_deeplink/cli.dart`, `MagicDeeplinkDowelProvider`): `deeplink:install` (`--force`, `--dry-run`, `--non-interactive`), `deeplink:generate` (`--output` default `public`, `--root`, `--team-id`, `--bundle-id`, `--package-name`, `--sha256-fingerprints`, `--paths` default `/*`; config values are defaults, flags win), `deeplink:doctor` (`--verbose`, `--remote`).
+- CLI (`package:magic_deeplink/cli.dart`, `MagicDeeplinkDowelProvider`): `deeplink:install` (`--force`, `--dry-run`, `--non-interactive`), `deeplink:generate` (`--output` default `public`, but the doctor looks only under `public/.well-known` or `web/.well-known`, so pass `--output public/.well-known`; `--root`, `--team-id`, `--bundle-id`, `--package-name`, `--sha256-fingerprints`, `--paths` default `/*`; config values are defaults, flags win), `deeplink:doctor` (`--verbose`, `--remote`).
 - Config `deeplink`: `enabled` (absent means on), `driver`, `domain`, `ios.team_id`, `ios.bundle_id`, `android.package_name`, `android.sha256_fingerprints`, `paths` (written into the AASA `components`, no runtime effect). A `scheme` key, written by earlier installs, is read by nothing.
 
 ## Platforms

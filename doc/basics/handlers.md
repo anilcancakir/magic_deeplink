@@ -22,12 +22,16 @@ Handlers decide what an incoming link does: `DeeplinkManager` offers each URI to
 ## Quick Reference
 
 ```dart
-DeeplinkManager().registerHandler(
-  RouteDeeplinkHandler(
-    paths: ['/products/:id', '/shop/*'],
-    hosts: ['example.com'],
-  ),
-);
+import 'package:magic_deeplink/magic_deeplink.dart';
+
+void main() {
+  DeeplinkManager().registerHandler(
+    RouteDeeplinkHandler(
+      paths: ['/products/:id', '/shop/*'],
+      hosts: ['example.com'],
+    ),
+  );
+}
 ```
 
 | Class | Role |
@@ -113,21 +117,29 @@ Matching ignores letter case unless `caseSensitive` is `true`. go_router routes 
 - A blank entry is ignored rather than treated as a wildcard: `hosts: ['']` refuses every absolute URI.
 
 ```dart
-final RouteDeeplinkHandler handler = RouteDeeplinkHandler(
-  paths: ['/monitors/:id'],
-  hosts: ['example.com'],
-);
+import 'package:magic_deeplink/magic_deeplink.dart';
 
-handler.canHandle(Uri.parse('/monitors/5')); // true, relative
-handler.canHandle(Uri.parse('https://EXAMPLE.com/monitors/5')); // true
-handler.canHandle(Uri.parse('https://evil.com/monitors/5')); // false, wrong host
-handler.canHandle(Uri.parse('https://example.com:8443/monitors/5')); // false, port
+void main() {
+  final RouteDeeplinkHandler handler = RouteDeeplinkHandler(
+    paths: ['/monitors/:id'],
+    hosts: ['example.com'],
+  );
+
+  handler.canHandle(Uri.parse('/monitors/5')); // true, relative
+  handler.canHandle(Uri.parse('https://EXAMPLE.com/monitors/5')); // true
+  handler.canHandle(Uri.parse('https://evil.com/monitors/5')); // false, wrong host
+  handler.canHandle(Uri.parse('https://example.com:8443/monitors/5')); // false, port
+}
 ```
 
 **Navigation.** A matching link navigates with the parsed path, the same value `canHandle` matched, and forwards the query parameters:
 
 ```dart
-MagicRoute.to(uri.path, query: uri.queryParameters);
+import 'package:magic/magic.dart';
+
+void open(Uri uri) {
+  MagicRoute.to(uri.path, query: uri.queryParameters);
+}
 ```
 
 So `https://example.com/products/42?ref=email` opens `/products/42` with `Request.query('ref')` answering `email`.
@@ -190,11 +202,13 @@ import 'package:flutter/foundation.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_deeplink/magic_deeplink.dart';
 
-Event.listenAny((MagicEvent event) {
-  if (event is DeeplinkNavigating) {
-    debugPrint('opening a link matching ${event.route}');
-  }
-});
+void main() {
+  Event.listenAny((MagicEvent event) {
+    if (event is DeeplinkNavigating) {
+      debugPrint('opening a link matching ${event.route}');
+    }
+  });
+}
 ```
 
 <a name="onesignaldeeplinkhandler"></a>
@@ -263,10 +277,15 @@ class ProductDeeplinkHandler extends DeeplinkHandler {
 Register on the `DeeplinkManager` singleton. Registering the same instance twice has no effect, and `hasHandler()` and `forgetHandlers()` inspect and clear the list:
 
 ```dart
-final DeeplinkManager manager = DeeplinkManager();
+import 'package:magic_deeplink/magic_deeplink.dart';
 
-manager.registerHandler(ProductDeeplinkHandler());
-manager.registerHandler(RouteDeeplinkHandler(paths: ['/products/*', '/shop/*']));
+// ProductDeeplinkHandler is the host's own handler class.
+void main() {
+  final DeeplinkManager manager = DeeplinkManager();
+
+  manager.registerHandler(ProductDeeplinkHandler());
+  manager.registerHandler(RouteDeeplinkHandler(paths: ['/products/*', '/shop/*']));
+}
 ```
 
 Do it in your own provider's `boot()`; see [Installation](../getting-started/installation.md#registering-a-route-handler). `DeeplinkServiceProvider` registers no handler of its own.

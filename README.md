@@ -12,6 +12,7 @@
 <p align="center">
   <a href="https://pub.dev/packages/magic_deeplink"><img src="https://img.shields.io/pub/v/magic_deeplink.svg" alt="pub package"></a>
   <a href="https://github.com/anilcancakir/magic_deeplink/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/anilcancakir/magic_deeplink/ci.yml?branch=master&label=CI" alt="CI"></a>
+  <a href="https://codecov.io/gh/anilcancakir/magic_deeplink"><img src="https://codecov.io/gh/anilcancakir/magic_deeplink/graph/badge.svg" alt="codecov"></a>
   <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT"></a>
   <a href="https://pub.dev/packages/magic_deeplink/score"><img src="https://img.shields.io/pub/points/magic_deeplink" alt="pub points"></a>
 </p>
@@ -82,7 +83,8 @@ Map<String, dynamic> get deeplinkConfig => {
 | `enabled` | The provider. An absent key means on; only an explicit `false` wires nothing, the push bridge included. |
 | `driver` | The provider. `'app_links'` is the only value that creates a driver. |
 | `domain` | `deeplink:doctor`, and your own handler's `hosts` if you pass it. |
-| `ios.team_id`, `ios.bundle_id`, `android.package_name`, `android.sha256_fingerprints`, `paths` | `deeplink:generate` and `deeplink:doctor`. `paths` fills the `components` of the `apple-app-site-association` file and filters nothing at runtime. |
+| `ios.team_id`, `ios.bundle_id`, `android.package_name`, `android.sha256_fingerprints` | `deeplink:generate` and `deeplink:doctor`. |
+| `paths` | `deeplink:generate`, for the `components` of the `apple-app-site-association` file. The doctor parses it and checks nothing against it; it filters nothing at runtime. |
 
 An install from an earlier release also wrote `'scheme': 'https'`. Nothing reads it; delete it.
 

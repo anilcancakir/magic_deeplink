@@ -168,10 +168,14 @@ The `catch` names what failed and then lets boot continue. Follow the same patte
 <a name="provider-teardown"></a>
 ## Provider Teardown
 
-`DeeplinkServiceProvider.dispose()` drops everything `boot()` wired: the push-click handler, the driver's link subscription, the driver itself, and the manager's reference to it through `DeeplinkManager.forgetDriver()`. `_deliver` checks a `_disposed` flag on both sides of its await, since a delivery waiting on `endOfFrame` has no handle a teardown could cancel.
+`DeeplinkServiceProvider.dispose()` drops everything `boot()` wired: the push-click handler, the driver's link subscription, the driver itself, and the manager's reference to it through `DeeplinkManager.forgetDriver()`. `_deliver` checks a `_disposed` flag once its wait for the first frame ends, before it hands the link over, since a delivery waiting on `endOfFrame` has no handle a teardown could cancel.
 
 ```dart
-await provider.dispose();
+import 'package:magic_deeplink/magic_deeplink.dart';
+
+Future<void> tearDown(DeeplinkServiceProvider provider) async {
+  await provider.dispose();
+}
 ```
 
 It is provider-level so that a consumer who tears down from the provider does not leave the driver running, and it is idempotent, because a consumer does not know which parts a given deployment wired. Nothing in the framework calls it; call it from whatever holds the provider instance.

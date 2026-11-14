@@ -45,7 +45,10 @@ post_install:
     2. Register deeplink handlers in a ServiceProvider boot() body:
 
          DeeplinkManager().registerHandler(
-           RouteDeeplinkHandler(paths: ['/users/:id', '/orders/:id']),
+           RouteDeeplinkHandler(
+             paths: ['/users/:id', '/orders/:id'],
+             hosts: [Config.getOrFail<String>('deeplink.domain')],
+           ),
          );
 
     3. Write each custom handler class by hand (implement canHandle + handle)
@@ -54,9 +57,9 @@ post_install:
     4. Generate the platform association files (apple-app-site-association,
        assetlinks.json) when you are ready to deploy:
 
-         dart run magic:dowel deeplink:generate --output ./public
+         dart run magic:dowel deeplink:generate --output public/.well-known
 
-    5. Verify the CLI; the host app's dowel lists deeplink:install and
-       deeplink:generate:
+    5. Verify the CLI; the host app's dowel lists deeplink:install,
+       deeplink:generate and deeplink:doctor:
 
          dart run magic:dowel list

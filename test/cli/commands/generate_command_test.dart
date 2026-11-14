@@ -358,7 +358,7 @@ Map<String, dynamic> get deeplinkConfig => {
 };
 ''');
 
-        // No explicit team-id/bundle-id/package-name/fingerprints — should read
+        // No explicit team-id/bundle-id/package-name/fingerprints, so it should read
         // from config file.
         final ctx = _ctx(command, options: {'output': 'public'});
         await command.handle(ctx);

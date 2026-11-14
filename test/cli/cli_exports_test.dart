@@ -1,12 +1,12 @@
 import 'package:test/test.dart';
 
-// Import via barrel — all CLI symbols must be reachable from this one import.
+// Import via barrel: all CLI symbols must be reachable from this one import.
 import 'package:magic_deeplink/src/cli/cli.dart';
 
 void main() {
   group('CLI barrel exports', () {
     test('barrel file can be imported without error', () {
-      // The import above compiling is itself proof — this is a sanity guard.
+      // The import above compiling is itself proof; this is a sanity guard.
       expect(true, isTrue);
     });
 

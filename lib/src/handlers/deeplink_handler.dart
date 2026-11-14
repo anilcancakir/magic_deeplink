@@ -32,7 +32,9 @@ abstract class DeeplinkHandler {
   /// null on every path that has no payload behind it.
   ///
   /// Implementations do NOT throw: a link this handler cannot route answers
-  /// false so the manager can try the next one.
+  /// false. The manager returns the answer of the first handler whose
+  /// [canHandle] is true and does not offer the link to a later one, so false
+  /// ends the chain for this link.
   Future<bool> handle(
     Uri uri, {
     required DeeplinkSource source,

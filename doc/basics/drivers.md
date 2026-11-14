@@ -67,13 +67,15 @@ The web arm and the stub arm, which no shipped build target resolves to, are ine
 ```dart
 import 'package:magic_deeplink/magic_deeplink.dart';
 
-final AppLinksDriver driver = AppLinksDriver();
-await driver.initialize({});
+Future<void> main() async {
+  final AppLinksDriver driver = AppLinksDriver();
+  await driver.initialize({});
 
-final Uri? initial = await driver.getInitialLink();
-driver.onLink.listen((Uri uri) {
-  // Links received while the app runs.
-});
+  final Uri? initial = await driver.getInitialLink();
+  driver.onLink.listen((Uri uri) {
+    // Links received while the app runs.
+  });
+}
 ```
 
 <a name="platform-support"></a>
