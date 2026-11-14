@@ -11,19 +11,9 @@
 # A private vulnerability report needs a signed-in session.
 ^https://github\.com/anilcancakir/magic_deeplink/security/advisories/new
 
-# The package pages are published with the docs site; until then they answer 404.
-# Added 2026-11-15: remove these lines once the docs site serves /magic/deeplink
-# and /magic/docs/deeplink.
-^https://anilcancakir\.com/magic/deeplink(?:[/?#]|$)
-^https://anilcancakir\.com/magic/docs/deeplink(?:[/?#]|$)
-
-# The notifications and starter pages are published with the docs site; until then
-# they answer 404.
-# Added 2026-11-15: remove these lines once the docs site serves /magic/notifications,
-# /magic/docs/notifications, /magic/starter and /magic/docs/starter.
-^https://anilcancakir\.com/magic/notifications(?:[/?#]|$)
-^https://anilcancakir\.com/magic/docs/notifications(?:[/?#]|$)
-^https://anilcancakir\.com/magic/starter(?:[/?#]|$)
+# The starter docs are not served yet (the starter docs sync is pending): /magic/docs/starter/basics/teams
+# still answers 404.
+# Remove this line once it is served.
 ^https://anilcancakir\.com/magic/docs/starter(?:[/?#]|$)
 
 # Placeholder hosts inside example code.
