@@ -59,7 +59,7 @@ Every feature, fix, or refactor goes through red-green-refactor: write a failing
 
 ## Testing
 
-- A provider test calls `MagicApp.reset()` in `setUp`, `DeeplinkManager().reset()` in `tearDown`, and passes `driverFactory:`: the real `AppLinksDriver` answers `isSupported` from the host and needs the `app_links` platform channel, which a unit test does not have
+- A provider test calls `MagicApp.reset()` and `DeeplinkManager().reset()` in `setUp` and `tearDown`, and passes `driverFactory:`: the real `AppLinksDriver` answers `isSupported` from the host and needs the `app_links` platform channel, which a unit test does not have
 - No router is built in a unit test, so `RouteDeeplinkHandler.handle` answers `false` for a matching link; assert matching through `canHandle`
 - The doctor and generate tests build a temp project and override `getProjectRoot()`; the install test seeds `.dart_tool/package_config.json` so the manifest finds this package's `assets/stubs/`
 
