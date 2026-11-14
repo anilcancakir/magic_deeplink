@@ -86,10 +86,10 @@ class InstallCommand extends DowelInstallCommand {
     );
 
     // 3. Echo the post_install message on success.
-    if (result is Success && manifest.postInstall.message != null) {
+    if (result is InstallSuccess && manifest.postInstall.message != null) {
       ctx.output.info(manifest.postInstall.message!);
     }
 
-    return result is Success || result is DryRun ? 0 : 1;
+    return result is InstallSuccess || result is InstallDryRun ? 0 : 1;
   }
 }
