@@ -2,7 +2,7 @@
 
 Flutter deep linking plugin for the Magic Framework. Universal Links (iOS) + App Links (Android) via `app_links` package.
 
-**Version:** 0.2.0 · **Dart:** >=3.13.0 · **Flutter:** >=3.47.0
+**Version:** 1.0.0 · **Dart:** >=3.13.0 · **Flutter:** >=3.47.0
 
 ## Commands
 

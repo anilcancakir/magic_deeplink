@@ -27,10 +27,6 @@
 
 ---
 
-> **Alpha**: `magic_deeplink` is under active development. APIs may change between minor versions until `1.0.0`.
-
----
-
 ## Why Magic Deeplink?
 
 Setting up deep links in Flutter means dealing with platform-specific manifests, JSON files hosted on your server, parsing URIs in multiple places, and wiring it all together. Every project reinvents the same boilerplate.
@@ -62,7 +58,7 @@ Setting up deep links in Flutter means dealing with platform-specific manifests,
 
 ```yaml
 dependencies:
-  magic_deeplink: ^0.2.0
+  magic_deeplink: ^1.0.0
 ```
 
 ### 2. Install configuration
