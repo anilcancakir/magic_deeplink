@@ -7,7 +7,9 @@ import 'package:dowel/dowel.dart';
 /// Produces `apple-app-site-association` (iOS Universal Links) and
 /// `assetlinks.json` (Android App Links). Each value comes from its flag
 /// first and from `lib/config/deeplink.dart` second, so a project that keeps
-/// its identifiers in the config runs the command with no flags.
+/// its identifiers in the config runs the command with no flags. The one
+/// exception is `--paths '/*'`: it equals the flag's default, so the command
+/// cannot tell it from an omitted flag and the paths in the config replace it.
 ///
 /// The files land directly in `--output`, which defaults to `public`. The
 /// doctor searches only `web/.well-known` and `public/.well-known`, so pass

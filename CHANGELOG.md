@@ -21,7 +21,7 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 - **The fix hint of `deeplink:doctor` now writes where the doctor looks.** It printed `deeplink:generate` with no `--output`, which writes to `public/`, a folder the doctor does not search, so following the hint left the same failure. It now prints `deeplink:generate --output public/.well-known`. (`lib/src/cli/commands/doctor_command.dart`)
-- **The `deeplink:generate` doc comment says where its values come from.** It claimed every value had to be passed as a flag; a flag wins, and `lib/config/deeplink.dart` fills the rest. Its example uses `--output public/.well-known`. (`lib/src/cli/commands/generate_command.dart`)
+- **The `deeplink:generate` doc comment says where its values come from.** It claimed every value had to be passed as a flag; a flag wins, and `lib/config/deeplink.dart` fills the rest; the one exception is `--paths '/*'`, which equals the default and so gives way to the configured paths. Its example uses `--output public/.well-known`. (`lib/src/cli/commands/generate_command.dart`)
 - **The architecture pages describe behaviour instead of quoting private fields.** The `DeeplinkManager` and service provider pages no longer show `_instance`, `_linkController`, `_initialLinkFetched`, `_deliver`, `_pushClicks` or `_disposed`. (`doc/architecture/`)
 - **The `AppLinksDriver` sample uses the initial link it reads**, so it no longer raises `unused_local_variable`. (`doc/basics/drivers.md`)
 - **Every file gives the same test reset advice:** call `DeeplinkManager().reset()` in `setUp` and in `tearDown`. (`README.md`, `llms.txt`, `doc/architecture/deeplink-manager.md`)

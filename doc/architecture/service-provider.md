@@ -128,7 +128,7 @@ if (app.bound('notifications')) {
 
   try {
     handler.setup(manager, app.make('notifications'));
-    // Kept so that dispose() can reach it.
+    _pushClicks = handler; // Kept so that dispose() can reach it.
   } catch (error) {
     handler.dispose();
 
