@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_deeplink/src/handlers/deeplink_handler.dart';
@@ -43,11 +43,7 @@ void main() {
 
   RouteDeeplinkHandler handlerWith(TenantSwitchGate? tenantGate) {
     return RouteDeeplinkHandler(
-      paths: [
-        '/',
-        '/incidents/:id',
-        '/monitors/:id',
-      ],
+      paths: ['/', '/incidents/:id', '/monitors/:id'],
       tenantGate: tenantGate,
     );
   }
@@ -206,10 +202,7 @@ void main() {
         handlerWith(gate(payloadKey: 'workspace')),
         '/incidents/1',
         source: DeeplinkSource.push,
-        payload: <String, dynamic>{
-          'team_id': 'ignored',
-          'workspace': 'other',
-        },
+        payload: <String, dynamic>{'team_id': 'ignored', 'workspace': 'other'},
       );
 
       expect(switchedTo, <String>['other']);
@@ -374,10 +367,8 @@ void main() {
     });
 
     test('handle never throws when the router is not built', () async {
-      final bool handled = await handlerWith(null).handle(
-        Uri.parse('/incidents/1'),
-        source: DeeplinkSource.osLink,
-      );
+      final bool handled = await handlerWith(null)
+          .handle(Uri.parse('/incidents/1'), source: DeeplinkSource.osLink);
 
       expect(handled, isFalse);
     });

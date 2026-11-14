@@ -102,28 +102,39 @@ void main() {
     });
 
     test('extractUri supports multiple keys', () {
-      expect(handler.extractUri({'url': 'https://a.com'}),
-          Uri.parse('https://a.com'));
-      expect(handler.extractUri({'deep_link': 'https://b.com'}),
-          Uri.parse('https://b.com'));
-      expect(handler.extractUri({'link': 'https://c.com'}),
-          Uri.parse('https://c.com'));
-      expect(handler.extractUri({'uri': 'https://d.com'}),
-          Uri.parse('https://d.com'));
+      expect(
+        handler.extractUri({'url': 'https://a.com'}),
+        Uri.parse('https://a.com'),
+      );
+      expect(
+        handler.extractUri({'deep_link': 'https://b.com'}),
+        Uri.parse('https://b.com'),
+      );
+      expect(
+        handler.extractUri({'link': 'https://c.com'}),
+        Uri.parse('https://c.com'),
+      );
+      expect(
+        handler.extractUri({'uri': 'https://d.com'}),
+        Uri.parse('https://d.com'),
+      );
     });
 
     test('extractUri returns null if no url found', () {
       expect(handler.extractUri({'other': 'value'}), isNull);
     });
 
-    test('extractData reads the payload off an event without naming its type',
-        () {
-      expect(
-        handler
-            .extractData(const FakePushNotificationEvent({'deep_link': 'x'})),
-        equals({'deep_link': 'x'}),
-      );
-    });
+    test(
+      'extractData reads the payload off an event without naming its type',
+      () {
+        expect(
+          handler.extractData(
+            const FakePushNotificationEvent({'deep_link': 'x'}),
+          ),
+          equals({'deep_link': 'x'}),
+        );
+      },
+    );
 
     test('extractData reports an event carrying no payload', () {
       final log = Log.fake();
@@ -132,8 +143,7 @@ void main() {
       expect(log.entries.where((entry) => entry.level == 'error'), isNotEmpty);
     });
 
-    testWidgets(
-        'setup routes a click carrying deep_link to the deeplink '
+    testWidgets('setup routes a click carrying deep_link to the deeplink '
         'manager', (WidgetTester tester) async {
       final notifications = FakeNotificationManager();
 
@@ -149,8 +159,7 @@ void main() {
       await notifications.dispose();
     });
 
-    testWidgets(
-        'a push click arrives as DeeplinkSource.push carrying the '
+    testWidgets('a push click arrives as DeeplinkSource.push carrying the '
         'whole payload', (WidgetTester tester) async {
       final notifications = FakeNotificationManager();
 
@@ -173,10 +182,10 @@ void main() {
       await notifications.dispose();
     });
 
-    testWidgets(
-        'a click is held until the first frame, so a cold start does '
-        'not route into a router nobody has built',
-        (WidgetTester tester) async {
+    testWidgets('a click is held until the first frame, so a cold start does '
+        'not route into a router nobody has built', (
+      WidgetTester tester,
+    ) async {
       final notifications = FakeNotificationManager();
 
       handler.setup(deeplinks, notifications);
@@ -197,8 +206,7 @@ void main() {
       await notifications.dispose();
     });
 
-    testWidgets(
-        'a click that lands while the frame is pending is dropped '
+    testWidgets('a click that lands while the frame is pending is dropped '
         'after dispose', (WidgetTester tester) async {
       final notifications = FakeNotificationManager();
 
@@ -217,8 +225,7 @@ void main() {
       await notifications.dispose();
     });
 
-    test(
-        'a second setup whose manager publishes no stream still drops the '
+    test('a second setup whose manager publishes no stream still drops the '
         'first subscription', () async {
       final first = FakeNotificationManager();
 

@@ -11,7 +11,7 @@
 # command produces the platform association files (apple-app-site-association,
 # assetlinks.json), not handler classes.
 #
-# See doc/install_yaml_schema.md (in fluttersdk_artisan) for the full schema.
+# See doc/plugins/install-yaml.md (in dowel) for the full schema.
 
 plugin_name: magic_deeplink
 
@@ -54,9 +54,9 @@ post_install:
     4. Generate the platform association files (apple-app-site-association,
        assetlinks.json) when you are ready to deploy:
 
-         dart run <app>:artisan deeplink:generate --output ./public
+         dart run magic:dowel deeplink:generate --output ./public
 
-    5. Verify the CLI; the host app's artisan lists deeplink:install and
+    5. Verify the CLI; the host app's dowel lists deeplink:install and
        deeplink:generate:
 
-         dart run <app>:artisan list
+         dart run magic:dowel list

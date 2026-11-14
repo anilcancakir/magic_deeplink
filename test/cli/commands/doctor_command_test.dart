@@ -1,9 +1,9 @@
 import 'dart:convert';
 import 'dart:io';
 
-// Import artisan without DoctorCommand to avoid collision with the
+// Import dowel without DoctorCommand to avoid collision with the
 // deeplink-specific DoctorCommand below.
-import 'package:fluttersdk_artisan/artisan.dart' hide DoctorCommand;
+import 'package:dowel/dowel.dart' hide DoctorCommand;
 import 'package:magic_deeplink/src/cli/commands/doctor_command.dart';
 import 'package:test/test.dart';
 
@@ -57,8 +57,9 @@ void _writeValidConfig(
   ],
 }) {
   Directory('${tempDir.path}/lib/config').createSync(recursive: true);
-  final fingerprintLiterals =
-      fingerprints.map((f) => "'$f'").join(',\n        ');
+  final fingerprintLiterals = fingerprints
+      .map((f) => "'$f'")
+      .join(',\n        ');
   File('${tempDir.path}/lib/config/deeplink.dart').writeAsStringSync('''
 Map<String, dynamic> get deeplinkConfig => {
   'deeplink': {
@@ -246,9 +247,11 @@ void _writeAssociationFiles(
   }
 
   File('${tempDir.path}/web/.well-known/apple-app-site-association')
-      .writeAsStringSync(jsonEncode({
-    'applinks': {'details': details},
-  }));
+      .writeAsStringSync(
+        jsonEncode({
+          'applinks': {'details': details},
+        }),
+      );
 
   File('${tempDir.path}/web/.well-known/assetlinks.json').writeAsStringSync(
     jsonEncode([
@@ -354,11 +357,11 @@ void main() {
     test('exits 0 and reports all checks passed', () async {
       _writeFullyConfiguredProject(tempDir);
       final output = BufferedOutput();
-      final ctx = ArtisanContext.bare(
-        MapInput(
-          {'verbose': false, 'remote': false},
-          signature: command.parsedSignature,
-        ),
+      final ctx = DowelContext.bare(
+        MapInput({
+          'verbose': false,
+          'remote': false,
+        }, signature: command.parsedSignature),
         output,
       );
       expect(await command.handle(ctx), 0);
@@ -401,7 +404,8 @@ void main() {
       _writeValidConfig(tempDir, bundleId: 'com.example.app');
       expect(
         command.validateConfig().any(
-            (i) => i.contains('bundle_id') && i.contains('com.example.app')),
+          (i) => i.contains('bundle_id') && i.contains('com.example.app'),
+        ),
         isTrue,
       );
     });
@@ -410,18 +414,21 @@ void main() {
       _writeValidConfig(tempDir, packageName: 'com.example.app');
       expect(
         command.validateConfig().any(
-            (i) => i.contains('package_name') && i.contains('com.example.app')),
+          (i) => i.contains('package_name') && i.contains('com.example.app'),
+        ),
         isTrue,
       );
     });
 
     test('reports a scaffold placeholder fingerprint', () {
-      _writeValidConfig(tempDir,
-          fingerprints: const ['YOUR_SHA256_FINGERPRINT']);
+      _writeValidConfig(
+        tempDir,
+        fingerprints: const ['YOUR_SHA256_FINGERPRINT'],
+      );
       expect(
-        command
-            .validateConfig()
-            .any((i) => i.contains('YOUR_SHA256_FINGERPRINT')),
+        command.validateConfig().any(
+          (i) => i.contains('YOUR_SHA256_FINGERPRINT'),
+        ),
         isTrue,
       );
     });
@@ -439,10 +446,7 @@ Map<String, dynamic> get deeplinkConfig => {
   },
 };
 ''');
-      expect(
-        command.validateConfig().any((i) => i.contains('domain')),
-        isTrue,
-      );
+      expect(command.validateConfig().any((i) => i.contains('domain')), isTrue);
     });
 
     test('tolerates a Dart generic annotation on the fingerprints list', () {
@@ -479,8 +483,9 @@ Map<String, dynamic> get deeplinkConfig => {
       _writeDartWiring(tempDir, includeProvider: false);
 
       expect(
-        (command.checkWiring()['issues'] as List<String>)
-            .any((i) => i.contains('DeeplinkServiceProvider')),
+        (command.checkWiring()['issues'] as List<String>).any(
+          (i) => i.contains('DeeplinkServiceProvider'),
+        ),
         isTrue,
       );
       expect(command.checkWiring()['configured'], isFalse);
@@ -491,8 +496,9 @@ Map<String, dynamic> get deeplinkConfig => {
       _writeDartWiring(tempDir, includeConfigFactory: false);
 
       expect(
-        (command.checkWiring()['issues'] as List<String>)
-            .any((i) => i.contains('deeplinkConfig')),
+        (command.checkWiring()['issues'] as List<String>).any(
+          (i) => i.contains('deeplinkConfig'),
+        ),
         isTrue,
       );
     });
@@ -507,8 +513,9 @@ Map<String, dynamic> get deeplinkConfig => {
       // and failing a correct project is worse than under-reporting.
       expect(wiring['issues'], isEmpty);
       expect(
-        (wiring['warnings'] as List<String>)
-            .any((w) => w.contains('registerHandler')),
+        (wiring['warnings'] as List<String>).any(
+          (w) => w.contains('registerHandler'),
+        ),
         isTrue,
       );
     });
@@ -541,8 +548,9 @@ Map<String, dynamic> get appConfig => {
 ''');
 
       expect(
-        (command.checkWiring()['issues'] as List<String>)
-            .any((i) => i.contains('DeeplinkServiceProvider')),
+        (command.checkWiring()['issues'] as List<String>).any(
+          (i) => i.contains('DeeplinkServiceProvider'),
+        ),
         isTrue,
       );
     });
@@ -587,15 +595,19 @@ Map<String, dynamic> get appConfig => {
     });
 
     test(
-        'reports an associated-domains host that disagrees with deeplink.domain',
-        () {
-      _writeValidConfig(tempDir, domain: 'app.example.com');
-      _writeIosProject(tempDir,
-          domain: 'app.example.com', entitlementsHost: 'wrong-host.com');
-      final issues = iosIssues();
-      expect(issues.any((i) => i.contains('wrong-host.com')), isTrue);
-      expect(issues.any((i) => i.contains('app.example.com')), isTrue);
-    });
+      'reports an associated-domains host that disagrees with deeplink.domain',
+      () {
+        _writeValidConfig(tempDir, domain: 'app.example.com');
+        _writeIosProject(
+          tempDir,
+          domain: 'app.example.com',
+          entitlementsHost: 'wrong-host.com',
+        );
+        final issues = iosIssues();
+        expect(issues.any((i) => i.contains('wrong-host.com')), isTrue);
+        expect(issues.any((i) => i.contains('app.example.com')), isTrue);
+      },
+    );
 
     test('reports the entitlements file missing', () {
       _writeValidConfig(tempDir);
@@ -632,8 +644,7 @@ Map<String, dynamic> get appConfig => {
       expect(androidIssues(), isEmpty);
     });
 
-    test(
-        'does not read a meta-data inside a <provider> as one on '
+    test('does not read a meta-data inside a <provider> as one on '
         '<application>', () {
       _writeValidConfig(tempDir);
       _writeAndroidManifest(tempDir, providerWithMetaData: true);
@@ -664,21 +675,20 @@ Map<String, dynamic> get appConfig => {
       expect(status['configured'], isFalse);
     });
 
-    test(
-      'flags flutter_deeplinking_enabled placed in <application> instead of <activity> — '
-      'a grep for the tag name cannot see this, only tree position can',
-      () {
-        _writeValidConfig(tempDir);
-        _writeAndroidManifest(tempDir, deepLinkingInApplication: true);
-        final issues = androidIssues();
-        expect(
-          issues.any((i) =>
+    test('flags flutter_deeplinking_enabled placed in <application> instead of <activity> — '
+        'a grep for the tag name cannot see this, only tree position can', () {
+      _writeValidConfig(tempDir);
+      _writeAndroidManifest(tempDir, deepLinkingInApplication: true);
+      final issues = androidIssues();
+      expect(
+        issues.any(
+          (i) =>
               i.contains('flutter_deeplinking_enabled') &&
-              i.contains('<application>')),
-          isTrue,
-        );
-      },
-    );
+              i.contains('<application>'),
+        ),
+        isTrue,
+      );
+    });
 
     test('reports flutter_deeplinking_enabled missing entirely', () {
       Directory('${tempDir.path}/android/app/src/main')
@@ -710,10 +720,7 @@ Map<String, dynamic> get appConfig => {
     test('reports a missing autoVerify intent-filter', () {
       _writeValidConfig(tempDir);
       _writeAndroidManifest(tempDir, includeAutoVerifyFilter: false);
-      expect(
-        androidIssues().any((i) => i.contains('autoVerify')),
-        isTrue,
-      );
+      expect(androidIssues().any((i) => i.contains('autoVerify')), isTrue);
     });
 
     test('reports an intent-filter missing the http scheme', () {
@@ -734,15 +741,20 @@ Map<String, dynamic> get appConfig => {
       );
     });
 
-    test('reports an intent-filter host that disagrees with deeplink.domain',
-        () {
-      _writeValidConfig(tempDir, domain: 'app.example.com');
-      _writeAndroidManifest(tempDir,
-          domain: 'app.example.com', host: 'wrong-host.com');
-      final issues = androidIssues();
-      expect(issues.any((i) => i.contains('wrong-host.com')), isTrue);
-      expect(issues.any((i) => i.contains('app.example.com')), isTrue);
-    });
+    test(
+      'reports an intent-filter host that disagrees with deeplink.domain',
+      () {
+        _writeValidConfig(tempDir, domain: 'app.example.com');
+        _writeAndroidManifest(
+          tempDir,
+          domain: 'app.example.com',
+          host: 'wrong-host.com',
+        );
+        final issues = androidIssues();
+        expect(issues.any((i) => i.contains('wrong-host.com')), isTrue);
+        expect(issues.any((i) => i.contains('app.example.com')), isTrue);
+      },
+    );
   });
 
   // ---------------------------------------------------------------------------
@@ -767,8 +779,9 @@ Map<String, dynamic> get appConfig => {
       File('${tempDir.path}/web/.well-known/assetlinks.json')
           .writeAsStringSync('[]');
       expect(
-        associationIssues()
-            .any((i) => i.contains('apple-app-site-association')),
+        associationIssues().any(
+          (i) => i.contains('apple-app-site-association'),
+        ),
         isTrue,
       );
     });
@@ -784,20 +797,24 @@ Map<String, dynamic> get appConfig => {
       );
     });
 
-    test(
-      'reports an AASA appID that disagrees with team_id + bundle_id',
-      () {
-        _writeValidConfig(tempDir,
-            teamId: 'ABCDE12345', bundleId: 'com.example.myapp');
-        _writeAssociationFiles(tempDir,
-            teamId: 'WRONGTEAM', bundleId: 'com.wrong.bundle');
-        expect(
-          associationIssues()
-              .any((i) => i.contains('ABCDE12345.com.example.myapp')),
-          isTrue,
-        );
-      },
-    );
+    test('reports an AASA appID that disagrees with team_id + bundle_id', () {
+      _writeValidConfig(
+        tempDir,
+        teamId: 'ABCDE12345',
+        bundleId: 'com.example.myapp',
+      );
+      _writeAssociationFiles(
+        tempDir,
+        teamId: 'WRONGTEAM',
+        bundleId: 'com.wrong.bundle',
+      );
+      expect(
+        associationIssues().any(
+          (i) => i.contains('ABCDE12345.com.example.myapp'),
+        ),
+        isTrue,
+      );
+    });
 
     test('reports assetlinks.json package_name mismatch', () {
       _writeValidConfig(tempDir, packageName: 'com.example.myapp');
@@ -817,10 +834,7 @@ Map<String, dynamic> get appConfig => {
         tempDir,
         fingerprints: const ['BB:BB:BB:BB:BB:BB:BB:BB:BB:BB:BB:BB:BB:BB:BB:BB'],
       );
-      expect(
-        associationIssues().any((i) => i.contains('AA:AA:AA')),
-        isTrue,
-      );
+      expect(associationIssues().any((i) => i.contains('AA:AA:AA')), isTrue);
     });
 
     test('warns, but does not fail, on mixed legacy + modern AASA formats', () {
@@ -845,11 +859,13 @@ Map<String, dynamic> get appConfig => {
       expect(report, contains('✗'));
     });
 
-    test('shows every passing check with a tick for a fully configured project',
-        () {
-      _writeFullyConfiguredProject(tempDir);
-      expect(command.generateReport(), contains('All requirements met'));
-    });
+    test(
+      'shows every passing check with a tick for a fully configured project',
+      () {
+        _writeFullyConfiguredProject(tempDir);
+        expect(command.generateReport(), contains('All requirements met'));
+      },
+    );
 
     test('names the one thing no local check can prove', () {
       final report = command.generateReport();
@@ -866,11 +882,11 @@ Map<String, dynamic> get appConfig => {
 
   group('exit codes via handle()', () {
     test('a broken project exits 1', () async {
-      final ctx = ArtisanContext.bare(
-        MapInput(
-          {'verbose': false, 'remote': false},
-          signature: command.parsedSignature,
-        ),
+      final ctx = DowelContext.bare(
+        MapInput({
+          'verbose': false,
+          'remote': false,
+        }, signature: command.parsedSignature),
         BufferedOutput(),
       );
       expect(await command.handle(ctx), 1);
@@ -882,11 +898,11 @@ Map<String, dynamic> get appConfig => {
       _writeDartWiring(tempDir);
       _writeAssociationFiles(tempDir, mixLegacyFormat: true);
       final output = BufferedOutput();
-      final ctx = ArtisanContext.bare(
-        MapInput(
-          {'verbose': false, 'remote': false},
-          signature: command.parsedSignature,
-        ),
+      final ctx = DowelContext.bare(
+        MapInput({
+          'verbose': false,
+          'remote': false,
+        }, signature: command.parsedSignature),
         output,
       );
       expect(await command.handle(ctx), 0);
@@ -902,11 +918,11 @@ Map<String, dynamic> get appConfig => {
     test('the default run never attempts a network call', () async {
       _writeFullyConfiguredProject(tempDir);
       final noNetwork = _NoNetworkDoctorCommand(tempDir.path);
-      final ctx = ArtisanContext.bare(
-        MapInput(
-          {'verbose': false, 'remote': false},
-          signature: noNetwork.parsedSignature,
-        ),
+      final ctx = DowelContext.bare(
+        MapInput({
+          'verbose': false,
+          'remote': false,
+        }, signature: noNetwork.parsedSignature),
         BufferedOutput(),
       );
       expect(await noNetwork.handle(ctx), 0);
@@ -917,16 +933,16 @@ Map<String, dynamic> get appConfig => {
       final fake = _FakeRemoteDoctorCommand(tempDir.path, {
         'https://app.example.com/.well-known/apple-app-site-association':
             const RemoteAssociationFile(
-          statusCode: 200,
-          contentType: 'application/json',
-          body: '{}',
-        ),
+              statusCode: 200,
+              contentType: 'application/json',
+              body: '{}',
+            ),
         'https://app.example.com/.well-known/assetlinks.json':
             const RemoteAssociationFile(
-          statusCode: 200,
-          contentType: 'application/json',
-          body: '[]',
-        ),
+              statusCode: 200,
+              contentType: 'application/json',
+              body: '[]',
+            ),
       });
 
       final result = await fake.checkRemoteAssociationFiles();
@@ -939,83 +955,91 @@ Map<String, dynamic> get appConfig => {
       final fake = _FakeRemoteDoctorCommand(tempDir.path, {
         'https://app.example.com/.well-known/apple-app-site-association':
             const RemoteAssociationFile(
-          statusCode: 302,
-          contentType: null,
-          body: '',
-        ),
+              statusCode: 302,
+              contentType: null,
+              body: '',
+            ),
         'https://app.example.com/.well-known/assetlinks.json':
             const RemoteAssociationFile(
-          statusCode: 200,
-          contentType: 'application/json',
-          body: '[]',
-        ),
+              statusCode: 200,
+              contentType: 'application/json',
+              body: '[]',
+            ),
       });
 
       final result = await fake.checkRemoteAssociationFiles();
       expect(result.issues.any((i) => i.contains('302')), isTrue);
     });
 
-    test('a body that does not parse as JSON is reported as an issue',
-        () async {
-      _writeValidConfig(tempDir, domain: 'app.example.com');
-      final fake = _FakeRemoteDoctorCommand(tempDir.path, {
-        'https://app.example.com/.well-known/apple-app-site-association':
-            const RemoteAssociationFile(
-          statusCode: 200,
-          contentType: 'application/json',
-          body: 'not json',
-        ),
-        'https://app.example.com/.well-known/assetlinks.json':
-            const RemoteAssociationFile(
-          statusCode: 200,
-          contentType: 'application/json',
-          body: '[]',
-        ),
-      });
+    test(
+      'a body that does not parse as JSON is reported as an issue',
+      () async {
+        _writeValidConfig(tempDir, domain: 'app.example.com');
+        final fake = _FakeRemoteDoctorCommand(tempDir.path, {
+          'https://app.example.com/.well-known/apple-app-site-association':
+              const RemoteAssociationFile(
+                statusCode: 200,
+                contentType: 'application/json',
+                body: 'not json',
+              ),
+          'https://app.example.com/.well-known/assetlinks.json':
+              const RemoteAssociationFile(
+                statusCode: 200,
+                contentType: 'application/json',
+                body: '[]',
+              ),
+        });
 
-      final result = await fake.checkRemoteAssociationFiles();
-      expect(
-          result.issues.any((i) => i.toLowerCase().contains('json')), isTrue);
-    });
+        final result = await fake.checkRemoteAssociationFiles();
+        expect(
+          result.issues.any((i) => i.toLowerCase().contains('json')),
+          isTrue,
+        );
+      },
+    );
 
-    test('a non-JSON content-type on the AASA is a warning, not a failure',
-        () async {
-      _writeValidConfig(tempDir, domain: 'app.example.com');
-      final fake = _FakeRemoteDoctorCommand(tempDir.path, {
-        'https://app.example.com/.well-known/apple-app-site-association':
-            const RemoteAssociationFile(
-          statusCode: 200,
-          contentType: 'text/plain',
-          body: '{}',
-        ),
-        'https://app.example.com/.well-known/assetlinks.json':
-            const RemoteAssociationFile(
-          statusCode: 200,
-          contentType: 'application/json',
-          body: '[]',
-        ),
-      });
+    test(
+      'a non-JSON content-type on the AASA is a warning, not a failure',
+      () async {
+        _writeValidConfig(tempDir, domain: 'app.example.com');
+        final fake = _FakeRemoteDoctorCommand(tempDir.path, {
+          'https://app.example.com/.well-known/apple-app-site-association':
+              const RemoteAssociationFile(
+                statusCode: 200,
+                contentType: 'text/plain',
+                body: '{}',
+              ),
+          'https://app.example.com/.well-known/assetlinks.json':
+              const RemoteAssociationFile(
+                statusCode: 200,
+                contentType: 'application/json',
+                body: '[]',
+              ),
+        });
 
-      final result = await fake.checkRemoteAssociationFiles();
-      expect(result.issues, isEmpty);
-      expect(result.warnings.any((w) => w.contains('text/plain')), isTrue);
-    });
+        final result = await fake.checkRemoteAssociationFiles();
+        expect(result.issues, isEmpty);
+        expect(result.warnings.any((w) => w.contains('text/plain')), isTrue);
+      },
+    );
   });
 
   group('the last mile no local check can prove', () {
-    test('handle() output never claims device-side matching is verified',
-        () async {
-      _writeFullyConfiguredProject(tempDir);
-      final output = BufferedOutput();
-      final ctx = ArtisanContext.bare(
-        MapInput(
-          {'verbose': false, 'remote': false},
-          signature: command.parsedSignature,
-        ),
-        output,
-      );
-      await command.handle(ctx);
-      expect(output.content.toLowerCase(), contains('device'));
-    });
+    test(
+      'handle() output never claims device-side matching is verified',
+      () async {
+        _writeFullyConfiguredProject(tempDir);
+        final output = BufferedOutput();
+        final ctx = DowelContext.bare(
+          MapInput({
+            'verbose': false,
+            'remote': false,
+          }, signature: command.parsedSignature),
+          output,
+        );
+        await command.handle(ctx);
+        expect(output.content.toLowerCase(), contains('device'));
+      },
+    );
   });
 }

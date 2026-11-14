@@ -87,7 +87,7 @@ body:
     id: flutter-version
     attributes:
       label: Flutter Version
-      placeholder: "3.27.0"
+      placeholder: "3.47.0"
     validations:
       required: true
 

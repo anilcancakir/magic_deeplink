@@ -1,13 +1,13 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:fluttersdk_artisan/artisan.dart';
+import 'package:dowel/dowel.dart';
 
 import 'generate_command.dart';
 
 /// Diagnostic command for a `magic_deeplink` install.
 ///
-/// The install has a half no manifest installer can automate: `artisan`'s
+/// The install has a half no manifest installer can automate: `dowel`'s
 /// transactional DSL can publish files and inject lines, but it cannot place
 /// an `<intent-filter>` inside a specific `<activity>` or tell an adopter
 /// their `<meta-data>` landed on the wrong element. Every way of getting that
@@ -27,11 +27,11 @@ import 'generate_command.dart';
 ///
 /// ## Usage
 /// ```bash
-/// dart run <app>:artisan deeplink:doctor
-/// dart run <app>:artisan deeplink:doctor --verbose
-/// dart run <app>:artisan deeplink:doctor --remote
+/// dart run magic:dowel deeplink:doctor
+/// dart run magic:dowel deeplink:doctor --verbose
+/// dart run magic:dowel deeplink:doctor --remote
 /// ```
-class DoctorCommand extends ArtisanCommand {
+class DoctorCommand extends DowelCommand {
   /// Values a scaffolded config still carries when nobody has filled them in.
   ///
   /// A published association file claiming one of these identities is worse
@@ -45,7 +45,8 @@ class DoctorCommand extends ArtisanCommand {
   };
 
   @override
-  String get signature => 'deeplink:doctor '
+  String get signature =>
+      'deeplink:doctor '
       '{--verbose : Show detailed diagnostic information} '
       '{--remote : Also fetch the association files from the live domain}';
 
@@ -85,7 +86,7 @@ class DoctorCommand extends ArtisanCommand {
   }
 
   @override
-  Future<int> handle(ArtisanContext ctx) async {
+  Future<int> handle(DowelContext ctx) async {
     final verbose = ctx.input.option('verbose') as bool;
     final remote = ctx.input.option('remote') as bool;
 
@@ -130,9 +131,8 @@ class DoctorCommand extends ArtisanCommand {
 
     ctx.output.writeln('');
     ctx.output.warning('Issues detected. Run the following to fix:');
-    ctx.output.writeln('  • Install: dart run <app>:artisan deeplink:install');
-    ctx.output
-        .writeln('  • Generate: dart run <app>:artisan deeplink:generate');
+    ctx.output.writeln('  • Install: dart run magic:dowel deeplink:install');
+    ctx.output.writeln('  • Generate: dart run magic:dowel deeplink:generate');
     return 1;
   }
 
@@ -258,29 +258,39 @@ class DoctorCommand extends ArtisanCommand {
 
     final appConfig = '$projectRoot/lib/config/app.dart';
     if (!FileHelper.fileExists(appConfig)) {
-      issues.add('lib/config/app.dart not found, so the provider list could '
-          'not be read');
+      issues.add(
+        'lib/config/app.dart not found, so the provider list could '
+        'not be read',
+      );
     } else if (!_mentions(appConfig, 'DeeplinkServiceProvider')) {
-      issues.add('DeeplinkServiceProvider is not registered in '
-          'lib/config/app.dart. Without it no driver is created and no link '
-          'ever reaches a handler.');
+      issues.add(
+        'DeeplinkServiceProvider is not registered in '
+        'lib/config/app.dart. Without it no driver is created and no link '
+        'ever reaches a handler.',
+      );
     }
 
     final main = '$projectRoot/lib/main.dart';
     if (!FileHelper.fileExists(main)) {
-      issues.add('lib/main.dart not found, so the config factory could not be '
-          'read');
+      issues.add(
+        'lib/main.dart not found, so the config factory could not be '
+        'read',
+      );
     } else if (!_mentions(main, 'deeplinkConfig')) {
-      issues.add('deeplinkConfig is not passed to Magic.init in lib/main.dart. '
-          'Every value this report just validated is then invisible at '
-          'runtime.');
+      issues.add(
+        'deeplinkConfig is not passed to Magic.init in lib/main.dart. '
+        'Every value this report just validated is then invisible at '
+        'runtime.',
+      );
     }
 
     if (!_libMentions('registerHandler(')) {
-      warnings.add('No registerHandler( call found under lib/. A link that '
-          'reaches the manager with no handler registered is dropped without '
-          'an error. Ignore this if handlers are registered somewhere this '
-          'scan cannot see.');
+      warnings.add(
+        'No registerHandler( call found under lib/. A link that '
+        'reaches the manager with no handler registered is dropped without '
+        'an error. Ignore this if handlers are registered somewhere this '
+        'scan cannot see.',
+      );
     }
 
     return {
@@ -323,10 +333,13 @@ class DoctorCommand extends ArtisanCommand {
   }
 
   /// [source] with `//` line comments removed.
-  String _stripLineComments(String source) => source.split('\n').map((line) {
+  String _stripLineComments(String source) => source
+      .split('\n')
+      .map((line) {
         final marker = line.indexOf('//');
         return marker == -1 ? line : line.substring(0, marker);
-      }).join('\n');
+      })
+      .join('\n');
 
   // ---------------------------------------------------------------------------
   // Platform setup
@@ -397,10 +410,12 @@ class DoctorCommand extends ArtisanCommand {
     final entitlementsPath = '$projectRoot/ios/Runner/Runner.entitlements';
     if (!FileHelper.fileExists(entitlementsPath)) {
       issues.add(
-          'Runner.entitlements not found at ios/Runner/Runner.entitlements');
+        'Runner.entitlements not found at ios/Runner/Runner.entitlements',
+      );
     } else {
-      final entitlements =
-          _withoutComments(FileHelper.readFile(entitlementsPath));
+      final entitlements = _withoutComments(
+        FileHelper.readFile(entitlementsPath),
+      );
       final arrayMatch = RegExp(
         r'<key>\s*com\.apple\.developer\.associated-domains\s*</key>\s*<array>(.*?)</array>',
         dotAll: true,
@@ -489,7 +504,8 @@ class DoctorCommand extends ArtisanCommand {
     final childMatches = childRegex.allMatches(applicationBody).toList();
     final activityBodies = childMatches
         .where(
-            (m) => m.group(1) == 'activity' || m.group(1) == 'activity-alias')
+          (m) => m.group(1) == 'activity' || m.group(1) == 'activity-alias',
+        )
         .map((m) => m.group(2) ?? '')
         .toList();
     var directChildren = applicationBody;
@@ -500,7 +516,9 @@ class DoctorCommand extends ArtisanCommand {
     final issues = <String>[
       ..._checkFlutterDeeplinkingMetaData(activityBodies, directChildren),
       ..._checkAutoVerifyIntentFilter(
-          activityBodies, config['domain'] as String?),
+        activityBodies,
+        config['domain'] as String?,
+      ),
     ];
 
     return {
@@ -565,7 +583,7 @@ class DoctorCommand extends ArtisanCommand {
 
     if (value == null) {
       return [
-        '$key meta-data not found inside any <activity> in AndroidManifest.xml'
+        '$key meta-data not found inside any <activity> in AndroidManifest.xml',
       ];
     }
     if (value != 'false') {
@@ -614,7 +632,8 @@ class DoctorCommand extends ArtisanCommand {
 
     if (!body.contains('android.intent.action.VIEW')) {
       issues.add(
-          'autoVerify intent-filter is missing an android.intent.action.VIEW <action>');
+        'autoVerify intent-filter is missing an android.intent.action.VIEW <action>',
+      );
     }
     if (!body.contains('android.intent.category.DEFAULT')) {
       issues.add(
@@ -633,7 +652,8 @@ class DoctorCommand extends ArtisanCommand {
         .toSet();
     if (!schemes.contains('http')) {
       issues.add(
-          'autoVerify intent-filter is missing a <data android:scheme="http"/> element');
+        'autoVerify intent-filter is missing a <data android:scheme="http"/> element',
+      );
     }
     if (!schemes.contains('https')) {
       issues.add(
@@ -694,7 +714,8 @@ class DoctorCommand extends ArtisanCommand {
       );
     } else {
       issues.addAll(
-          _validateAssetLinks(assetLinksPath, packageName, fingerprints));
+        _validateAssetLinks(assetLinksPath, packageName, fingerprints),
+      );
     }
 
     return {
@@ -718,7 +739,10 @@ class DoctorCommand extends ArtisanCommand {
   /// Validate an `apple-app-site-association` file's content against
   /// [teamId] + [bundleId], and warn on a legacy/modern format mix.
   RemoteCheckResult _validateAasa(
-      String path, String? teamId, String? bundleId) {
+    String path,
+    String? teamId,
+    String? bundleId,
+  ) {
     final issues = <String>[];
     final warnings = <String>[];
 
@@ -739,7 +763,8 @@ class DoctorCommand extends ArtisanCommand {
     }
     if (details is! List) {
       issues.add(
-          'apple-app-site-association at $path has no applinks.details entries');
+        'apple-app-site-association at $path has no applinks.details entries',
+      );
       return RemoteCheckResult(issues, warnings);
     }
 
@@ -834,7 +859,8 @@ class DoctorCommand extends ArtisanCommand {
     for (final fingerprint in fingerprints) {
       if (!seenFingerprints.contains(fingerprint)) {
         issues.add(
-            'assetlinks.json at $path is missing the sha256 fingerprint "$fingerprint"');
+          'assetlinks.json at $path is missing the sha256 fingerprint "$fingerprint"',
+        );
       }
     }
 
@@ -853,10 +879,9 @@ class DoctorCommand extends ArtisanCommand {
   Future<RemoteCheckResult> checkRemoteAssociationFiles() async {
     final domain = _loadConfig()['domain'] as String?;
     if (domain == null || domain.isEmpty) {
-      return const RemoteCheckResult(
-        ['--remote requires deeplink.domain to be configured'],
-        [],
-      );
+      return const RemoteCheckResult([
+        '--remote requires deeplink.domain to be configured',
+      ], []);
     }
 
     final issues = <String>[];
@@ -872,7 +897,8 @@ class DoctorCommand extends ArtisanCommand {
 
         if (result.statusCode != 200) {
           issues.add(
-              '$uri responded ${result.statusCode}, expected 200 with no redirect');
+            '$uri responded ${result.statusCode}, expected 200 with no redirect',
+          );
           continue;
         }
 
@@ -957,8 +983,10 @@ class DoctorCommand extends ArtisanCommand {
   /// [remoteResult] is included only when `--remote` was requested; the
   /// closing note names the one thing no local (or remote) check can ever
   /// prove: that a real device matches the link.
-  String generateReport(
-      {bool verbose = false, RemoteCheckResult? remoteResult}) {
+  String generateReport({
+    bool verbose = false,
+    RemoteCheckResult? remoteResult,
+  }) {
     final buffer = StringBuffer();
     buffer.writeln('Magic Deeplink — Doctor Report');
     buffer.writeln('=' * 50);
@@ -986,8 +1014,9 @@ class DoctorCommand extends ArtisanCommand {
     }
     buffer.writeln();
 
-    final platformStatus =
-        configExists ? checkPlatformSetup() : <String, dynamic>{};
+    final platformStatus = configExists
+        ? checkPlatformSetup()
+        : <String, dynamic>{};
     if (platformStatus.isEmpty) {
       if (configExists) {
         buffer.writeln('Platform Setup: no platforms detected');
@@ -1079,12 +1108,12 @@ class DoctorCommand extends ArtisanCommand {
 
   /// Human title for a [checkPlatformSetup] section key.
   String _sectionTitle(String section) => switch (section) {
-        'wiring' => 'Dart Wiring',
-        'ios' => 'iOS Setup',
-        'android' => 'Android Setup',
-        'associations' => 'Association Files',
-        _ => section,
-      };
+    'wiring' => 'Dart Wiring',
+    'ios' => 'iOS Setup',
+    'android' => 'Android Setup',
+    'associations' => 'Association Files',
+    _ => section,
+  };
 }
 
 /// A `--remote` HTTP response, trimmed to what the doctor checks: status,

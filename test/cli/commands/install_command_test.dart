@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:fluttersdk_artisan/artisan.dart';
+import 'package:dowel/dowel.dart';
 import 'package:magic_deeplink/src/cli/commands/install_command.dart';
 import 'package:test/test.dart';
 
@@ -26,7 +26,7 @@ class _TestableInstallCommand extends InstallCommand {
   Future<String?> resolveManifestPath() async => manifestPath;
 
   @override
-  InstallContext buildContext(ArtisanContext ctx) =>
+  InstallContext buildContext(DowelContext ctx) =>
       InstallContext.real(ctx, projectRoot: projectRoot);
 }
 
@@ -40,9 +40,9 @@ String get _packageManifest => '${Directory.current.path}/install.yaml';
 /// Returns the absolute path to the magic_deeplink package root.
 String get _pluginRoot => Directory.current.path;
 
-/// Builds an [ArtisanContext] for the given [flags] against the command's
+/// Builds an [DowelContext] for the given [flags] against the command's
 /// parsed signature.
-ArtisanContext _ctx(
+DowelContext _ctx(
   InstallCommand cmd, {
   Map<String, dynamic> flags = const <String, dynamic>{},
 }) {
@@ -52,7 +52,7 @@ ArtisanContext _ctx(
     'non-interactive': true,
     'no-bootstrap': false,
   };
-  return ArtisanContext.bare(
+  return DowelContext.bare(
     MapInput({...defaults, ...flags}, signature: cmd.parsedSignature),
     BufferedOutput(),
   );
@@ -132,21 +132,26 @@ void main() {
   // -------------------------------------------------------------------------
 
   group('InstallCommand, metadata', () {
-    test('extends ArtisanInstallCommand', () {
-      expect(command, isA<ArtisanInstallCommand>());
+    test('extends DowelInstallCommand', () {
+      expect(command, isA<DowelInstallCommand>());
     });
 
     test('signature starts with deeplink:install', () {
       expect(command.signature, startsWith('deeplink:install'));
     });
 
-    test('includes the 4 base flags from ArtisanInstallCommand', () {
-      final optionNames =
-          command.parsedSignature!.options.map((o) => o.name).toSet();
+    test('includes the 4 base flags from DowelInstallCommand', () {
+      final optionNames = command.parsedSignature!.options
+          .map((o) => o.name)
+          .toSet();
       expect(
         optionNames,
-        containsAll(
-            <String>['force', 'dry-run', 'non-interactive', 'no-bootstrap']),
+        containsAll(<String>[
+          'force',
+          'dry-run',
+          'non-interactive',
+          'no-bootstrap',
+        ]),
       );
     });
 
@@ -180,8 +185,8 @@ void main() {
       final ctx = _ctx(command);
       await command.handle(ctx);
 
-      final appContent =
-          File('${tempDir.path}/lib/config/app.dart').readAsStringSync();
+      final appContent = File('${tempDir.path}/lib/config/app.dart')
+          .readAsStringSync();
       expect(appContent, contains('DeeplinkServiceProvider'));
     });
 
@@ -191,8 +196,8 @@ void main() {
       final ctx = _ctx(command);
       await command.handle(ctx);
 
-      final mainContent =
-          File('${tempDir.path}/lib/main.dart').readAsStringSync();
+      final mainContent = File('${tempDir.path}/lib/main.dart')
+          .readAsStringSync();
       expect(mainContent, contains('deeplinkConfig'));
     });
 
@@ -226,8 +231,8 @@ void main() {
       final ctx = _ctx(command, flags: {'force': true});
       await command.handle(ctx);
 
-      final content =
-          File('${tempDir.path}/lib/config/deeplink.dart').readAsStringSync();
+      final content = File('${tempDir.path}/lib/config/deeplink.dart')
+          .readAsStringSync();
       expect(content, contains('deeplinkConfig'));
       expect(content, isNot(contains('// original content')));
     });
@@ -251,33 +256,32 @@ void main() {
       );
     });
 
-    test('dry-run reports the iOS FlutterDeepLinkingEnabled plist key',
-        () async {
-      // Guards install.yaml's native.ios.info_plist entry that switches off
-      // Flutter's own deep link handler on iOS, so it does not fight the
-      // app_links driver this package wires in. Fails until install.yaml
-      // carries the key.
-      _seedProject(tempDir.path);
+    test(
+      'dry-run reports the iOS FlutterDeepLinkingEnabled plist key',
+      () async {
+        // Guards install.yaml's native.ios.info_plist entry that switches off
+        // Flutter's own deep link handler on iOS, so it does not fight the
+        // app_links driver this package wires in. Fails until install.yaml
+        // carries the key.
+        _seedProject(tempDir.path);
 
-      final output = BufferedOutput();
-      final ctx = ArtisanContext.bare(
-        MapInput(
-          {
+        final output = BufferedOutput();
+        final ctx = DowelContext.bare(
+          MapInput({
             'force': false,
             'dry-run': true,
             'non-interactive': true,
             'no-bootstrap': false,
-          },
-          signature: command.parsedSignature,
-        ),
-        output,
-      );
+          }, signature: command.parsedSignature),
+          output,
+        );
 
-      final exitCode = await command.handle(ctx);
+        final exitCode = await command.handle(ctx);
 
-      expect(exitCode, 0);
-      expect(output.content, contains('FlutterDeepLinkingEnabled'));
-    });
+        expect(exitCode, 0);
+        expect(output.content, contains('FlutterDeepLinkingEnabled'));
+      },
+    );
   });
 
   // -------------------------------------------------------------------------
@@ -296,11 +300,14 @@ void main() {
       );
       await command2.handle(_ctx(command2));
 
-      final appContent =
-          File('${tempDir.path}/lib/config/app.dart').readAsStringSync();
+      final appContent = File('${tempDir.path}/lib/config/app.dart')
+          .readAsStringSync();
       final matches = RegExp('DeeplinkServiceProvider').allMatches(appContent);
-      expect(matches.length, 1,
-          reason: 'Provider should only be injected once');
+      expect(
+        matches.length,
+        1,
+        reason: 'Provider should only be injected once',
+      );
     });
 
     test('running twice does not duplicate config factory injection', () async {
@@ -313,13 +320,16 @@ void main() {
       );
       await command2.handle(_ctx(command2));
 
-      final mainContent =
-          File('${tempDir.path}/lib/main.dart').readAsStringSync();
+      final mainContent = File('${tempDir.path}/lib/main.dart')
+          .readAsStringSync();
       // deeplinkConfig appears once in configFactories injection; the
       // deeplink.dart file itself is written to lib/config/ not main.dart.
       final matches = RegExp(r'deeplinkConfig').allMatches(mainContent);
-      expect(matches.length, 1,
-          reason: 'Config factory should only be injected once');
+      expect(
+        matches.length,
+        1,
+        reason: 'Config factory should only be injected once',
+      );
     });
   });
 }

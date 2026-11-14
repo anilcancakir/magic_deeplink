@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:fluttersdk_artisan/artisan.dart';
+import 'package:dowel/dowel.dart';
 
 /// CLI command to generate deep link server-side configuration files.
 ///
@@ -11,16 +11,17 @@ import 'package:fluttersdk_artisan/artisan.dart';
 /// ## Usage
 ///
 /// ```bash
-/// dart run <app>:artisan deeplink:generate \
+/// dart run magic:dowel deeplink:generate \
 ///   --team-id ABCDE12345 \
 ///   --bundle-id your.package.name \
 ///   --package-name your.package.name \
 ///   --sha256-fingerprints AA:BB:CC:... \
 ///   --output public
 /// ```
-class GenerateCommand extends ArtisanCommand {
+class GenerateCommand extends DowelCommand {
   @override
-  String get signature => 'deeplink:generate '
+  String get signature =>
+      'deeplink:generate '
       '{--output=public : Output directory for generated files (relative to project root).} '
       '{--root=. : Project root directory (defaults to current working directory).} '
       '{--team-id= : Apple Developer Team ID (for AASA).} '
@@ -57,7 +58,7 @@ class GenerateCommand extends ArtisanCommand {
   }
 
   @override
-  Future<int> handle(ArtisanContext ctx) async {
+  Future<int> handle(DowelContext ctx) async {
     // 1. Read all CLI option values — no defaults live in this method.
     final root = ctx.input.option('root') as String? ?? '.';
     final outputDir = ctx.input.option('output') as String? ?? 'public';
@@ -153,16 +154,14 @@ class GenerateCommand extends ArtisanCommand {
       config['teamId'] = teamIdMatch.group(1);
     }
 
-    final bundleIdMatch = RegExp(
-      r"'bundle_id':\s*'([^']+)'",
-    ).firstMatch(content);
+    final bundleIdMatch = RegExp(r"'bundle_id':\s*'([^']+)'")
+        .firstMatch(content);
     if (bundleIdMatch != null) {
       config['bundleId'] = bundleIdMatch.group(1);
     }
 
-    final packageNameMatch = RegExp(
-      r"'package_name':\s*'([^']+)'",
-    ).firstMatch(content);
+    final packageNameMatch = RegExp(r"'package_name':\s*'([^']+)'")
+        .firstMatch(content);
     if (packageNameMatch != null) {
       config['packageName'] = packageNameMatch.group(1);
     }
@@ -176,11 +175,11 @@ class GenerateCommand extends ArtisanCommand {
     ).firstMatch(content);
     if (fingerprintsMatch != null) {
       final fingerprintsContent = fingerprintsMatch.group(1) ?? '';
-      final fingerprintMatches = RegExp(
-        r"'([^']+)'",
-      ).allMatches(fingerprintsContent);
-      config['fingerprints'] =
-          fingerprintMatches.map((m) => m.group(1)!).toList();
+      final fingerprintMatches = RegExp(r"'([^']+)'")
+          .allMatches(fingerprintsContent);
+      config['fingerprints'] = fingerprintMatches
+          .map((m) => m.group(1)!)
+          .toList();
     }
 
     final pathsMatch = RegExp(

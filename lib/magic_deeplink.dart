@@ -23,4 +23,4 @@ export 'src/providers/deeplink_service_provider.dart';
 export 'src/exceptions/deeplink_exception.dart';
 
 // CLI
-export 'src/cli/deeplink_artisan_provider.dart';
+export 'src/cli/deeplink_dowel_provider.dart';

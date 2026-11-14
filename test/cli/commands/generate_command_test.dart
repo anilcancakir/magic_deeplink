@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:fluttersdk_artisan/artisan.dart';
+import 'package:dowel/dowel.dart';
 import 'package:test/test.dart';
 
 import 'package:magic_deeplink/src/cli/commands/generate_command.dart';
@@ -16,9 +16,9 @@ class _TestGenerateCommand extends GenerateCommand {
   String getProjectRoot() => root;
 }
 
-/// Builds an [ArtisanContext] for the given [options] against the command's
+/// Builds an [DowelContext] for the given [options] against the command's
 /// parsed signature, including multi-value options.
-ArtisanContext _ctx(
+DowelContext _ctx(
   GenerateCommand cmd, {
   Map<String, dynamic> options = const <String, dynamic>{},
 }) {
@@ -31,7 +31,7 @@ ArtisanContext _ctx(
     'sha256-fingerprints': <String>[],
     'paths': <String>['/*'],
   };
-  return ArtisanContext.bare(
+  return DowelContext.bare(
     MapInput({...defaults, ...options}, signature: cmd.parsedSignature),
     BufferedOutput(),
   );
@@ -124,9 +124,10 @@ void main() {
     // parseDeeplinkConfig()
     // -----------------------------------------------------------------------
 
-    test('parseDeeplinkConfig parses team_id and bundle_id from config content',
-        () {
-      final content = '''
+    test(
+      'parseDeeplinkConfig parses team_id and bundle_id from config content',
+      () {
+        final content = '''
 Map<String, dynamic> get deeplinkConfig => {
   'deeplink': {
     'ios': {
@@ -136,11 +137,12 @@ Map<String, dynamic> get deeplinkConfig => {
   },
 };
 ''';
-      final config = command.parseDeeplinkConfig(content);
+        final config = command.parseDeeplinkConfig(content);
 
-      expect(config['teamId'], 'TEAM123');
-      expect(config['bundleId'], 'com.example.app');
-    });
+        expect(config['teamId'], 'TEAM123');
+        expect(config['bundleId'], 'com.example.app');
+      },
+    );
 
     test('parseDeeplinkConfig parses package_name and fingerprints', () {
       final content = '''
@@ -178,9 +180,7 @@ Map<String, dynamic> get deeplinkConfig => {
       expect(config['paths'], ['/users/*', '/posts/*']);
     });
 
-    test(
-        'parseDeeplinkConfig parses fingerprints written with a generic annotation (uptizm shape)',
-        () {
+    test('parseDeeplinkConfig parses fingerprints written with a generic annotation (uptizm shape)', () {
       final content = '''
 Map<String, dynamic> get deeplinkConfig => {
   'deeplink': {
@@ -195,9 +195,7 @@ Map<String, dynamic> get deeplinkConfig => {
       expect(config['fingerprints'], ['AA:BB:CC']);
     });
 
-    test(
-        'parseDeeplinkConfig returns empty values when config has no matching keys',
-        () {
+    test('parseDeeplinkConfig returns empty values when config has no matching keys', () {
       final content = '''
 Map<String, dynamic> get deeplinkConfig => {
   'deeplink': {
@@ -218,36 +216,26 @@ Map<String, dynamic> get deeplinkConfig => {
     // buildAppleAppSiteAssociation()
     // -----------------------------------------------------------------------
 
-    test(
-        'buildAppleAppSiteAssociation(T1, com.app, [/path/*]) returns map with applinks.details[0].appIDs == [T1.com.app]',
-        () {
-      final result = command.buildAppleAppSiteAssociation(
-        'T1',
-        'com.app',
-        ['/path/*'],
-      );
+    test('buildAppleAppSiteAssociation(T1, com.app, [/path/*]) returns map with applinks.details[0].appIDs == [T1.com.app]', () {
+      final result = command.buildAppleAppSiteAssociation('T1', 'com.app', [
+        '/path/*',
+      ]);
 
       final details = (result['applinks'] as Map)['details'] as List;
       expect(details.first['appIDs'], ['T1.com.app']);
     });
 
-    test(
-        'buildAppleAppSiteAssociation(T1, com.app, [/path/*]) returns map with components [{/: /path/*}]',
-        () {
-      final result = command.buildAppleAppSiteAssociation(
-        'T1',
-        'com.app',
-        ['/path/*'],
-      );
+    test('buildAppleAppSiteAssociation(T1, com.app, [/path/*]) returns map with components [{/: /path/*}]', () {
+      final result = command.buildAppleAppSiteAssociation('T1', 'com.app', [
+        '/path/*',
+      ]);
 
       final details = (result['applinks'] as Map)['details'] as List;
       final components = details.first['components'] as List;
       expect(components.first['/'], '/path/*');
     });
 
-    test(
-        'buildAppleAppSiteAssociation emits exactly one details entry in the modern shape and drops apps',
-        () {
+    test('buildAppleAppSiteAssociation emits exactly one details entry in the modern shape and drops apps', () {
       final result = command.buildAppleAppSiteAssociation(
         'ABCDE12345',
         'com.example.app',
@@ -279,9 +267,7 @@ Map<String, dynamic> get deeplinkConfig => {
     // buildAssetLinks()
     // -----------------------------------------------------------------------
 
-    test(
-        'buildAssetLinks(com.app, [FINGERPRINT]) returns list with target.package_name == com.app',
-        () {
+    test('buildAssetLinks(com.app, [FINGERPRINT]) returns list with target.package_name == com.app', () {
       final result = command.buildAssetLinks('com.app', ['FINGERPRINT']);
 
       final first = result.first as Map;
@@ -289,39 +275,43 @@ Map<String, dynamic> get deeplinkConfig => {
       expect(target['package_name'], 'com.app');
     });
 
-    test(
-        'buildAssetLinks(com.app, [FP1, FP2]) returns list with 2 entries OR 1 entry with 2 fingerprints',
-        () {
+    test('buildAssetLinks(com.app, [FP1, FP2]) returns list with 2 entries OR 1 entry with 2 fingerprints', () {
       final result = command.buildAssetLinks('com.app', ['FP1', 'FP2']);
 
       expect(result, hasLength(2));
-      expect(((result[0] as Map)['target'] as Map)['sha256_cert_fingerprints'],
-          ['FP1']);
-      expect(((result[1] as Map)['target'] as Map)['sha256_cert_fingerprints'],
-          ['FP2']);
+      expect(
+        ((result[0] as Map)['target'] as Map)['sha256_cert_fingerprints'],
+        ['FP1'],
+      );
+      expect(
+        ((result[1] as Map)['target'] as Map)['sha256_cert_fingerprints'],
+        ['FP2'],
+      );
     });
 
     // -----------------------------------------------------------------------
     // handle()
     // -----------------------------------------------------------------------
 
-    test(
-        'handle() with temp dir writes apple-app-site-association and assetlinks.json',
-        () async {
-      final ctx = _ctx(command, options: {
-        'output': 'public',
-        'team-id': 'TEAM1',
-        'bundle-id': 'com.example.app',
-        'package-name': 'com.example.app',
-        'sha256-fingerprints': ['AA:BB:CC'],
-        'paths': ['/*'],
-      });
+    test('handle() with temp dir writes apple-app-site-association and assetlinks.json', () async {
+      final ctx = _ctx(
+        command,
+        options: {
+          'output': 'public',
+          'team-id': 'TEAM1',
+          'bundle-id': 'com.example.app',
+          'package-name': 'com.example.app',
+          'sha256-fingerprints': ['AA:BB:CC'],
+          'paths': ['/*'],
+        },
+      );
       final exitCode = await command.handle(ctx);
 
       expect(exitCode, 0);
 
-      final aasaFile =
-          File('${tempDir.path}/public/apple-app-site-association');
+      final aasaFile = File(
+        '${tempDir.path}/public/apple-app-site-association',
+      );
       expect(aasaFile.existsSync(), isTrue);
 
       final aasaJson = jsonDecode(aasaFile.readAsStringSync());
@@ -341,13 +331,14 @@ Map<String, dynamic> get deeplinkConfig => {
       );
     });
 
-    test('handle reads from config file when present and no CLI flags',
-        () async {
-      // Create config file.
-      final configDir = Directory('${tempDir.path}/lib/config');
-      configDir.createSync(recursive: true);
-      final configFile = File('${configDir.path}/deeplink.dart');
-      configFile.writeAsStringSync('''
+    test(
+      'handle reads from config file when present and no CLI flags',
+      () async {
+        // Create config file.
+        final configDir = Directory('${tempDir.path}/lib/config');
+        configDir.createSync(recursive: true);
+        final configFile = File('${configDir.path}/deeplink.dart');
+        configFile.writeAsStringSync('''
 Map<String, dynamic> get deeplinkConfig => {
   'deeplink': {
     'ios': {
@@ -367,34 +358,39 @@ Map<String, dynamic> get deeplinkConfig => {
 };
 ''');
 
-      // No explicit team-id/bundle-id/package-name/fingerprints — should read
-      // from config file.
-      final ctx = _ctx(command, options: {'output': 'public'});
-      await command.handle(ctx);
+        // No explicit team-id/bundle-id/package-name/fingerprints — should read
+        // from config file.
+        final ctx = _ctx(command, options: {'output': 'public'});
+        await command.handle(ctx);
 
-      final aasaFile =
-          File('${tempDir.path}/public/apple-app-site-association');
-      expect(aasaFile.existsSync(), isTrue);
+        final aasaFile = File(
+          '${tempDir.path}/public/apple-app-site-association',
+        );
+        expect(aasaFile.existsSync(), isTrue);
 
-      final aasaJson = jsonDecode(aasaFile.readAsStringSync());
-      final aasaDetails = (aasaJson['applinks'] as Map)['details'] as List;
-      expect(aasaDetails.first['appIDs'], ['CONFIG_TEAM.com.config.ios']);
-      expect(
-        (aasaDetails.first['components'] as List).first['/'],
-        '/config/*',
-      );
+        final aasaJson = jsonDecode(aasaFile.readAsStringSync());
+        final aasaDetails = (aasaJson['applinks'] as Map)['details'] as List;
+        expect(aasaDetails.first['appIDs'], ['CONFIG_TEAM.com.config.ios']);
+        expect(
+          (aasaDetails.first['components'] as List).first['/'],
+          '/config/*',
+        );
 
-      final assetLinksFile = File('${tempDir.path}/public/assetlinks.json');
-      expect(assetLinksFile.existsSync(), isTrue);
+        final assetLinksFile = File('${tempDir.path}/public/assetlinks.json');
+        expect(assetLinksFile.existsSync(), isTrue);
 
-      final assetLinksJson =
-          jsonDecode(assetLinksFile.readAsStringSync()) as List;
-      expect((assetLinksJson.first['target'] as Map)['package_name'],
-          'com.config.android');
-      expect(
+        final assetLinksJson =
+            jsonDecode(assetLinksFile.readAsStringSync()) as List;
+        expect(
+          (assetLinksJson.first['target'] as Map)['package_name'],
+          'com.config.android',
+        );
+        expect(
           (assetLinksJson.first['target'] as Map)['sha256_cert_fingerprints'],
-          ['CONFIG:FP']);
-    });
+          ['CONFIG:FP'],
+        );
+      },
+    );
 
     test('handle CLI flags override config file values', () async {
       // Create config file.
@@ -422,38 +418,42 @@ Map<String, dynamic> get deeplinkConfig => {
 ''');
 
       // CLI flags should win over config file values.
-      final ctx = _ctx(command, options: {
-        'output': 'public',
-        'team-id': 'CLI_TEAM',
-        'bundle-id': 'com.cli.ios',
-        'package-name': 'com.cli.android',
-        'sha256-fingerprints': ['CLI:FP'],
-        'paths': ['/cli/*'],
-      });
+      final ctx = _ctx(
+        command,
+        options: {
+          'output': 'public',
+          'team-id': 'CLI_TEAM',
+          'bundle-id': 'com.cli.ios',
+          'package-name': 'com.cli.android',
+          'sha256-fingerprints': ['CLI:FP'],
+          'paths': ['/cli/*'],
+        },
+      );
       await command.handle(ctx);
 
-      final aasaFile =
-          File('${tempDir.path}/public/apple-app-site-association');
+      final aasaFile = File(
+        '${tempDir.path}/public/apple-app-site-association',
+      );
       expect(aasaFile.existsSync(), isTrue);
 
       final aasaJson = jsonDecode(aasaFile.readAsStringSync());
       final aasaDetails = (aasaJson['applinks'] as Map)['details'] as List;
       expect(aasaDetails.first['appIDs'], ['CLI_TEAM.com.cli.ios']);
-      expect(
-        (aasaDetails.first['components'] as List).first['/'],
-        '/cli/*',
-      );
+      expect((aasaDetails.first['components'] as List).first['/'], '/cli/*');
 
       final assetLinksFile = File('${tempDir.path}/public/assetlinks.json');
       expect(assetLinksFile.existsSync(), isTrue);
 
       final assetLinksJson =
           jsonDecode(assetLinksFile.readAsStringSync()) as List;
-      expect((assetLinksJson.first['target'] as Map)['package_name'],
-          'com.cli.android');
       expect(
-          (assetLinksJson.first['target'] as Map)['sha256_cert_fingerprints'],
-          ['CLI:FP']);
+        (assetLinksJson.first['target'] as Map)['package_name'],
+        'com.cli.android',
+      );
+      expect(
+        (assetLinksJson.first['target'] as Map)['sha256_cert_fingerprints'],
+        ['CLI:FP'],
+      );
     });
   });
 }

@@ -40,10 +40,10 @@ class DeeplinkOpened extends MagicEvent implements ReportsBreadcrumb {
 
   @override
   Map<String, Object?> get breadcrumbData => <String, Object?>{
-        'source': source.name,
-        'route': route,
-        'names_tenant': namesTenant,
-      };
+    'source': source.name,
+    'route': route,
+    'names_tenant': namesTenant,
+  };
 }
 
 /// Dispatched immediately before `RouteDeeplinkHandler` hands a link's path to
@@ -67,7 +67,5 @@ class DeeplinkNavigating extends MagicEvent implements ReportsBreadcrumb {
       'navigating to a destination named by an external link';
 
   @override
-  Map<String, Object?> get breadcrumbData => <String, Object?>{
-        'route': route,
-      };
+  Map<String, Object?> get breadcrumbData => <String, Object?>{'route': route};
 }

@@ -5,7 +5,7 @@ paths:
 
 # Flutter / Dart Stack
 
-- Dart >=3.6.0, Flutter >=3.27.0 — use modern patterns (records, switch expressions, strict null safety)
+- Dart >=3.13.0, Flutter >=3.47.0 — use modern patterns (records, switch expressions, strict null safety)
 - Import order: dart/flutter stdlib → third-party packages → `package:magic/magic.dart` → `package:magic_deeplink/...` → relative imports
 - Naming: `{Concept}Manager` (singleton), `{Concept}Driver` (strategy impl), `{Purpose}Handler` (chain-of-resp), `{Concept}ServiceProvider` (bootstrap), `{Concept}Exception`
 - Singleton pattern: `static final _instance = Class._internal(); factory Class() => _instance;`
