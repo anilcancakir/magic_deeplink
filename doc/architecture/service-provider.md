@@ -195,4 +195,4 @@ The provider's position relative to the provider that registers `'notifications'
 - [Handlers](../basics/handlers.md): `OneSignalDeeplinkHandler` and the handler chain.
 - [Installation](../getting-started/installation.md): adding the provider with the install command.
 - [Service Providers in Magic](https://anilcancakir.com/magic/docs/getting-started/service-providers): the two-phase lifecycle.
-- [Channels in magic_notifications](https://anilcancakir.com/magic_notifications/docs/basics/channels): the notification manager the push bridge reads.
+- [Channels in magic_notifications](https://anilcancakir.com/magic/docs/notifications/basics/channels): the notification manager the push bridge reads.

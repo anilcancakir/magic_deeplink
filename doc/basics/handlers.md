@@ -316,5 +316,5 @@ Register specific handlers before generic ones. A wildcard `RouteDeeplinkHandler
 - [Drivers](./drivers.md): where the links come from.
 - [Installation](../getting-started/installation.md): registering a first handler.
 - [Service Provider](../architecture/service-provider.md): how the push bridge is wired and torn down.
-- [Channels in magic_notifications](https://anilcancakir.com/magic_notifications/docs/basics/channels): the push side of the bridge.
-- [Teams in magic_starter](https://anilcancakir.com/magic_starter/docs/basics/teams): the team switcher the tenant sample uses.
+- [Channels in magic_notifications](https://anilcancakir.com/magic/docs/notifications/basics/channels): the push side of the bridge.
+- [Teams in magic_starter](https://anilcancakir.com/magic/docs/starter/basics/teams): the team switcher the tenant sample uses.

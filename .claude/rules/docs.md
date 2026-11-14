@@ -34,7 +34,7 @@ One-line lead: what the page covers and when to use it.
 - Layout is `doc/<section>/<page>.md`: two levels, lowercase `[a-z0-9-]` names, sections `getting-started`, `basics`, `architecture`. No `doc/index.md`; the site skips files outside that shape.
 - Put `<a name="kebab-slug"></a>` immediately before every `##` and list the slug in the ToC under the lead paragraph. End a `basics` page with a Gotchas table (mistake, fix), each row verified in `lib/`.
 - Dart samples use `dart` fences and shell commands `bash`; a sample carries its imports, implements `register()` on a provider, and runs as written. Tables are left-aligned (`:-----`) with every identifier in backticks.
-- Links are relative `.md` paths inside `doc/` only; a target outside `doc/` is never published. Core and other plugins are linked as `https://anilcancakir.com/<package>/docs/<section>/<page>`.
+- Links are relative `.md` paths inside `doc/` only; a target outside `doc/` is never published. Core is linked as `https://anilcancakir.com/magic/docs/<section>/<page>` and other plugins as `https://anilcancakir.com/magic/docs/<slug>/<section>/<page>`.
 - Open with the answer: a Quick Reference table or a minimal sample. Commands are `dart run magic:dowel <command>`; the package has no `bin/` of its own. No dash characters in prose, no counts.
 - Run `python3 -I tool/check-docs.py` before reporting doc work done.
 
