@@ -27,10 +27,6 @@
 
 ---
 
-> **Alpha**: `magic_deeplink` is under active development. APIs may change between minor versions until `1.0.0`.
-
----
-
 ## Why Magic Deeplink?
 
 Setting up deep links in Flutter means dealing with platform-specific manifests, JSON files hosted on your server, parsing URIs in multiple places, and wiring it all together. Every project reinvents the same boilerplate.
@@ -62,14 +58,17 @@ Setting up deep links in Flutter means dealing with platform-specific manifests,
 
 ```yaml
 dependencies:
-  magic_deeplink: ^0.1.8
+  magic_deeplink: ^1.0.0
 ```
 
 ### 2. Install configuration
 
 ```bash
-dart run <app>:artisan deeplink:install
+dart run magic:dowel plugin:install magic_deeplink
+dart run magic:dowel deeplink:install
 ```
+
+`plugin:install` registers the package's CLI provider in `.dowel/plugins.json`; without it `deeplink:install` does not resolve.
 
 This generates `lib/config/deeplink.dart`, injects `DeeplinkServiceProvider` into `lib/config/app.dart`, and wires the `deeplinkConfig` factory into `lib/main.dart`.
 
@@ -127,7 +126,7 @@ Universal Links (iOS) and App Links (Android) require verification files hosted 
 Generate them with one command:
 
 ```bash
-dart run <app>:artisan deeplink:generate --output ./public
+dart run magic:dowel deeplink:generate --output ./public
 ```
 
 This creates two files:
@@ -148,7 +147,7 @@ Upload these to the root or `.well-known/` directory of your web server so that 
 Scaffolds the deeplink configuration into your Magic project.
 
 ```bash
-dart run <app>:artisan deeplink:install
+dart run magic:dowel deeplink:install
 ```
 
 **What it does:**
@@ -166,7 +165,7 @@ dart run <app>:artisan deeplink:install
 Generates platform verification files from your config.
 
 ```bash
-dart run <app>:artisan deeplink:generate --output ./public
+dart run magic:dowel deeplink:generate --output ./public
 ```
 
 Reads configuration from `lib/config/deeplink.dart` first. CLI flags override config file values.

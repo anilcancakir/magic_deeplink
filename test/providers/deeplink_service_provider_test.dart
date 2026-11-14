@@ -254,14 +254,13 @@ void main() {
     });
 
     test('boot wires nothing at all when deeplink.enabled is false', () async {
-      await MagicApp.init(configs: [
-        {
-          'deeplink': {
-            'enabled': false,
-            'driver': 'app_links',
-          }
-        }
-      ]);
+      await MagicApp.init(
+        configs: [
+          {
+            'deeplink': {'enabled': false, 'driver': 'app_links'},
+          },
+        ],
+      );
 
       final notifications = FakeNotificationManager();
 
@@ -280,14 +279,13 @@ void main() {
     });
 
     test('boot sets driver when configured', () async {
-      await MagicApp.init(configs: [
-        {
-          'deeplink': {
-            'enabled': true,
-            'driver': 'app_links',
-          }
-        }
-      ]);
+      await MagicApp.init(
+        configs: [
+          {
+            'deeplink': {'enabled': true, 'driver': 'app_links'},
+          },
+        ],
+      );
 
       final driver = FakeDeeplinkDriver();
       provider = DeeplinkServiceProvider(app, driverFactory: () => driver);
@@ -300,14 +298,13 @@ void main() {
     });
 
     test('boot never sets a driver the platform does not support', () async {
-      await MagicApp.init(configs: [
-        {
-          'deeplink': {
-            'enabled': true,
-            'driver': 'app_links',
-          }
-        }
-      ]);
+      await MagicApp.init(
+        configs: [
+          {
+            'deeplink': {'enabled': true, 'driver': 'app_links'},
+          },
+        ],
+      );
 
       // What the web build gets. Nothing read `isSupported`, so a browser was
       // handed a driver whose stream is empty and whose initial link is always
@@ -323,41 +320,45 @@ void main() {
       expect(driver.initialized, isEmpty);
     });
 
-    test('boot defaults to the app_links driver', () async {
-      await MagicApp.init(configs: [
-        {
-          'deeplink': {
-            'enabled': true,
-            'driver': 'app_links',
-          }
-        }
-      ]);
+    test(
+      'boot defaults to the app_links driver',
+      () async {
+        await MagicApp.init(
+          configs: [
+            {
+              'deeplink': {'enabled': true, 'driver': 'app_links'},
+            },
+          ],
+        );
 
-      provider.register();
-      await provider.boot();
+        provider.register();
+        await provider.boot();
 
-      // The consumer constructs `DeeplinkServiceProvider(app)` with no factory,
-      // and what that produces is the platform arm of `AppLinksDriver`. The
-      // gate above decides whether it is wired, so this is asserted on a host
-      // that supports one and skipped where none exists; the gate ITSELF is
-      // pinned platform-independently by the two tests above.
-      final manager = app.make<DeeplinkManager>('deeplinks');
-      expect(manager.driver, isA<AppLinksDriver>());
-    },
-        skip: AppLinksDriver().isSupported
-            ? null
-            : 'No app_links driver on this host, so there is nothing to wire.');
+        // The consumer constructs `DeeplinkServiceProvider(app)` with no factory,
+        // and what that produces is the platform arm of `AppLinksDriver`. The
+        // gate above decides whether it is wired, so this is asserted on a host
+        // that supports one and skipped where none exists; the gate ITSELF is
+        // pinned platform-independently by the two tests above.
+        final manager = app.make<DeeplinkManager>('deeplinks');
+        expect(manager.driver, isA<AppLinksDriver>());
+      },
+      skip: AppLinksDriver().isSupported
+          ? null
+          : 'No app_links driver on this host, so there is nothing to wire.',
+    );
 
     test('boot hands the driver the whole deeplink config', () async {
-      await MagicApp.init(configs: [
-        {
-          'deeplink': {
-            'enabled': true,
-            'driver': 'app_links',
-            'scheme': 'https',
-          }
-        }
-      ]);
+      await MagicApp.init(
+        configs: [
+          {
+            'deeplink': {
+              'enabled': true,
+              'driver': 'app_links',
+              'scheme': 'https',
+            },
+          },
+        ],
+      );
 
       final driver = FakeDeeplinkDriver();
       provider = DeeplinkServiceProvider(app, driverFactory: () => driver);
@@ -371,14 +372,13 @@ void main() {
     });
 
     test('boot connects driver stream to manager', () async {
-      await MagicApp.init(configs: [
-        {
-          'deeplink': {
-            'enabled': true,
-            'driver': 'app_links',
-          }
-        }
-      ]);
+      await MagicApp.init(
+        configs: [
+          {
+            'deeplink': {'enabled': true, 'driver': 'app_links'},
+          },
+        ],
+      );
 
       final driver = FakeDeeplinkDriver();
       provider = DeeplinkServiceProvider(app, driverFactory: () => driver);
@@ -390,14 +390,15 @@ void main() {
       expect(manager.onLink, isA<Stream<Uri>>());
     });
 
-    testWidgets(
-        'a cold-start link served by both driver paths reaches the handler '
+    testWidgets('a cold-start link served by both driver paths reaches the handler '
         'exactly once', (WidgetTester tester) async {
-      await MagicApp.init(configs: [
-        {
-          'deeplink': {'enabled': true, 'driver': 'app_links'}
-        }
-      ]);
+      await MagicApp.init(
+        configs: [
+          {
+            'deeplink': {'enabled': true, 'driver': 'app_links'},
+          },
+        ],
+      );
 
       final cold = Uri.parse('https://uptizm.com/incidents/42');
       final driver = FakeDeeplinkDriver(coldStart: cold);
@@ -426,13 +427,16 @@ void main() {
       expect(driver.initialLinkCalls, 0);
     });
 
-    testWidgets('a link that arrives while the app runs reaches the handler',
-        (WidgetTester tester) async {
-      await MagicApp.init(configs: [
-        {
-          'deeplink': {'enabled': true, 'driver': 'app_links'}
-        }
-      ]);
+    testWidgets('a link that arrives while the app runs reaches the handler', (
+      WidgetTester tester,
+    ) async {
+      await MagicApp.init(
+        configs: [
+          {
+            'deeplink': {'enabled': true, 'driver': 'app_links'},
+          },
+        ],
+      );
 
       final driver = FakeDeeplinkDriver();
       final handler = CapturingHandler();
@@ -452,14 +456,15 @@ void main() {
       expect(handler.sources, [DeeplinkSource.osLink]);
     });
 
-    testWidgets(
-        'routes a push click carrying deep_link when notifications is '
+    testWidgets('routes a push click carrying deep_link when notifications is '
         'registered after this provider', (WidgetTester tester) async {
-      await MagicApp.init(configs: [
-        {
-          'deeplink': {'enabled': true}
-        }
-      ]);
+      await MagicApp.init(
+        configs: [
+          {
+            'deeplink': {'enabled': true},
+          },
+        ],
+      );
 
       final notifications = FakeNotificationManager();
       final handler = CapturingHandler();
@@ -493,11 +498,13 @@ void main() {
     });
 
     test('dispose stops routing pushes the provider had wired', () async {
-      await MagicApp.init(configs: [
-        {
-          'deeplink': {'enabled': true}
-        }
-      ]);
+      await MagicApp.init(
+        configs: [
+          {
+            'deeplink': {'enabled': true},
+          },
+        ],
+      );
 
       final notifications = FakeNotificationManager();
       final handler = CapturingHandler();
@@ -519,13 +526,14 @@ void main() {
       await notifications.dispose();
     });
 
-    test('dispose drops the manager\'s driver, not only the provider\'s field',
-        () async {
-      await MagicApp.init(configs: [
-        {
-          'deeplink': {'enabled': true, 'driver': 'app_links'}
-        }
-      ]);
+    test('dispose drops the manager\'s driver, not only the provider\'s field', () async {
+      await MagicApp.init(
+        configs: [
+          {
+            'deeplink': {'enabled': true, 'driver': 'app_links'},
+          },
+        ],
+      );
 
       final driver = FakeDeeplinkDriver();
       provider = DeeplinkServiceProvider(app, driverFactory: () => driver);
@@ -550,13 +558,16 @@ void main() {
       expect(driver.isDisposed, isTrue);
     });
 
-    testWidgets('dispose drops a delivery that is waiting for the first frame',
-        (WidgetTester tester) async {
-      await MagicApp.init(configs: [
-        {
-          'deeplink': {'enabled': true, 'driver': 'app_links'}
-        }
-      ]);
+    testWidgets('dispose drops a delivery that is waiting for the first frame', (
+      WidgetTester tester,
+    ) async {
+      await MagicApp.init(
+        configs: [
+          {
+            'deeplink': {'enabled': true, 'driver': 'app_links'},
+          },
+        ],
+      );
 
       final driver = FakeDeeplinkDriver(
         coldStart: Uri.parse('https://uptizm.com/incidents/42'),
@@ -587,68 +598,77 @@ void main() {
     });
 
     testWidgets(
-        'dispose stops the driver stream from routing anything afterwards',
-        (WidgetTester tester) async {
-      await MagicApp.init(configs: [
-        {
-          'deeplink': {'enabled': true, 'driver': 'app_links'}
-        }
-      ]);
+      'dispose stops the driver stream from routing anything afterwards',
+      (WidgetTester tester) async {
+        await MagicApp.init(
+          configs: [
+            {
+              'deeplink': {'enabled': true, 'driver': 'app_links'},
+            },
+          ],
+        );
 
-      final driver = FakeDeeplinkDriver();
-      final handler = CapturingHandler();
-      DeeplinkManager().registerHandler(handler);
+        final driver = FakeDeeplinkDriver();
+        final handler = CapturingHandler();
+        DeeplinkManager().registerHandler(handler);
 
-      provider = DeeplinkServiceProvider(app, driverFactory: () => driver);
-      await app.register(provider);
-      await app.boot();
-      await tester.pump();
+        provider = DeeplinkServiceProvider(app, driverFactory: () => driver);
+        await app.register(provider);
+        await app.boot();
+        await tester.pump();
 
-      // Through `runAsync` for the same reason as the test above: the stream
-      // cancellation `dispose` awaits completes in the root zone.
-      await tester.runAsync(() => provider.dispose());
+        // Through `runAsync` for the same reason as the test above: the stream
+        // cancellation `dispose` awaits completes in the root zone.
+        await tester.runAsync(() => provider.dispose());
 
-      driver.emit(Uri.parse('https://uptizm.com/monitors/7'));
-      await tester.pump();
+        driver.emit(Uri.parse('https://uptizm.com/monitors/7'));
+        await tester.pump();
 
-      // Until this package had a driver seam, the cancellation could only be
-      // read from the source: `AppLinksDriver` takes its stream straight from
-      // `app_links` and a test could not emit on it.
-      expect(handler.handled, isEmpty);
-    });
-
-    test('dispose completes on a driver-wired provider, and repeats safely',
-        () async {
-      await MagicApp.init(configs: [
-        {
-          'deeplink': {'enabled': true, 'driver': 'app_links'}
-        }
-      ]);
-
-      provider = DeeplinkServiceProvider(
-        app,
-        driverFactory: FakeDeeplinkDriver.new,
-      );
-
-      await app.register(provider);
-      await app.boot();
-
-      // `doc/basics/handlers.md` tells a consumer to call teardown from their
-      // service provider, and a consumer does not know which parts this
-      // deployment wired, so calling it on a provider with a driver but no
-      // notifications, and calling it twice, both have to be safe.
-      await provider.dispose();
-      await provider.dispose();
-    }, timeout: const Timeout(Duration(seconds: 10)));
+        // Until this package had a driver seam, the cancellation could only be
+        // read from the source: `AppLinksDriver` takes its stream straight from
+        // `app_links` and a test could not emit on it.
+        expect(handler.handled, isEmpty);
+      },
+    );
 
     test(
-        'a notifications factory that throws is reported and does not abort '
+      'dispose completes on a driver-wired provider, and repeats safely',
+      () async {
+        await MagicApp.init(
+          configs: [
+            {
+              'deeplink': {'enabled': true, 'driver': 'app_links'},
+            },
+          ],
+        );
+
+        provider = DeeplinkServiceProvider(
+          app,
+          driverFactory: FakeDeeplinkDriver.new,
+        );
+
+        await app.register(provider);
+        await app.boot();
+
+        // `doc/basics/handlers.md` tells a consumer to call teardown from their
+        // service provider, and a consumer does not know which parts this
+        // deployment wired, so calling it on a provider with a driver but no
+        // notifications, and calling it twice, both have to be safe.
+        await provider.dispose();
+        await provider.dispose();
+      },
+      timeout: const Timeout(Duration(seconds: 10)),
+    );
+
+    test('a notifications factory that throws is reported and does not abort '
         'app boot', () async {
-      await MagicApp.init(configs: [
-        {
-          'deeplink': {'enabled': true}
-        }
-      ]);
+      await MagicApp.init(
+        configs: [
+          {
+            'deeplink': {'enabled': true},
+          },
+        ],
+      );
 
       final log = Log.fake();
 
@@ -671,43 +691,49 @@ void main() {
     });
 
     test(
-        'an onPushClicked getter that throws a StateError is reported and does '
-        'not abort app boot', () async {
-      await MagicApp.init(configs: [
-        {
-          'deeplink': {'enabled': true}
-        }
-      ]);
+      'an onPushClicked getter that throws a StateError is reported and does '
+      'not abort app boot',
+      () async {
+        await MagicApp.init(
+          configs: [
+            {
+              'deeplink': {'enabled': true},
+            },
+          ],
+        );
 
-      final log = Log.fake();
+        final log = Log.fake();
 
-      await app.register(provider);
-      await app.register(
-        FakeNotificationServiceProvider(
-          app,
-          FakeThrowingNotificationManager(),
-        ),
-      );
+        await app.register(provider);
+        await app.register(
+          FakeNotificationServiceProvider(
+            app,
+            FakeThrowingNotificationManager(),
+          ),
+        );
 
-      await app.boot();
+        await app.boot();
 
-      expect(app.isBooted, isTrue);
-      expect(
-        log.entries.where(
-          (entry) =>
-              entry.level == 'error' &&
-              entry.message.contains('not initialised'),
-        ),
-        isNotEmpty,
-      );
-    });
+        expect(app.isBooted, isTrue);
+        expect(
+          log.entries.where(
+            (entry) =>
+                entry.level == 'error' &&
+                entry.message.contains('not initialised'),
+          ),
+          isNotEmpty,
+        );
+      },
+    );
 
     test('subscribes to nothing when notifications is not installed', () async {
-      await MagicApp.init(configs: [
-        {
-          'deeplink': {'enabled': true}
-        }
-      ]);
+      await MagicApp.init(
+        configs: [
+          {
+            'deeplink': {'enabled': true},
+          },
+        ],
+      );
 
       final notifications = FakeNotificationManager();
 
@@ -720,30 +746,37 @@ void main() {
       await notifications.dispose();
     });
 
-    test('reports when the bound notifications manager publishes no clicks',
-        () async {
-      await MagicApp.init(configs: [
-        {
-          'deeplink': {'enabled': true}
-        }
-      ]);
+    test(
+      'reports when the bound notifications manager publishes no clicks',
+      () async {
+        await MagicApp.init(
+          configs: [
+            {
+              'deeplink': {'enabled': true},
+            },
+          ],
+        );
 
-      final log = Log.fake();
+        final log = Log.fake();
 
-      await app.register(provider);
-      await app.register(
-        FakeNotificationServiceProvider(
-            app, FakeShapelessNotificationManager()),
-      );
-      await app.boot();
+        await app.register(provider);
+        await app.register(
+          FakeNotificationServiceProvider(
+            app,
+            FakeShapelessNotificationManager(),
+          ),
+        );
+        await app.boot();
 
-      expect(
-        log.entries.where(
-          (entry) =>
-              entry.level == 'error' && entry.message.contains('onPushClicked'),
-        ),
-        isNotEmpty,
-      );
-    });
+        expect(
+          log.entries.where(
+            (entry) =>
+                entry.level == 'error' &&
+                entry.message.contains('onPushClicked'),
+          ),
+          isNotEmpty,
+        );
+      },
+    );
   });
 }

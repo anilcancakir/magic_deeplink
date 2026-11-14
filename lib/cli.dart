@@ -1,20 +1,21 @@
-/// Flutter-free artisan-CLI surface for magic_deeplink.
+/// Flutter-free dowel-CLI surface for magic_deeplink.
 ///
-/// Exposes ONLY the artisan-CLI surface (MagicDeeplinkArtisanProvider + the
+/// Exposes ONLY the dowel-CLI surface (MagicDeeplinkDowelProvider + the
 /// CLI commands). Does NOT export magic_deeplink runtime (no Flutter dart:ui
-/// imports), so this barrel is safe for consumption from pure-Dart artisan
+/// imports), so this barrel is safe for consumption from pure-Dart dowel
 /// dispatchers.
 ///
-/// Consumers register the provider in their `bin/artisan.dart`:
+/// `plugin:install` registers the provider in the consumer's
+/// `bin/dispatcher.dart`; wiring it by hand looks like:
 ///
 /// ```dart
-/// import 'package:fluttersdk_artisan/artisan.dart';
-/// import 'package:magic_deeplink/cli.dart' show MagicDeeplinkArtisanProvider;
+/// import 'package:dowel/dowel.dart';
+/// import 'package:magic_deeplink/cli.dart' show MagicDeeplinkDowelProvider;
 ///
 /// Future<void> main(List<String> args) async {
-///   final registry = ArtisanRegistry()
-///     ..registerProvider(MagicDeeplinkArtisanProvider());
-///   exit(await ArtisanApplication(registry: registry).dispatch(args));
+///   final registry = DowelRegistry()
+///     ..registerProvider(MagicDeeplinkDowelProvider());
+///   exit(await DowelApplication(registry: registry).dispatch(args));
 /// }
 /// ```
 ///
@@ -25,4 +26,4 @@ library;
 export 'src/cli/commands/doctor_command.dart';
 export 'src/cli/commands/generate_command.dart';
 export 'src/cli/commands/install_command.dart';
-export 'src/cli/deeplink_artisan_provider.dart';
+export 'src/cli/deeplink_dowel_provider.dart';

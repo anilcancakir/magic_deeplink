@@ -112,10 +112,14 @@ void main() {
 
     test('handleUri calls first matching handler', () async {
       final handler1 = MockDeeplinkHandler(canHandleValue: false);
-      final handler2 =
-          MockDeeplinkHandler(canHandleValue: true, handleValue: true);
-      final handler3 =
-          MockDeeplinkHandler(canHandleValue: true, handleValue: false);
+      final handler2 = MockDeeplinkHandler(
+        canHandleValue: true,
+        handleValue: true,
+      );
+      final handler3 = MockDeeplinkHandler(
+        canHandleValue: true,
+        handleValue: false,
+      );
 
       manager.registerHandler(handler1);
       manager.registerHandler(handler2);
@@ -132,23 +136,25 @@ void main() {
       expect(handler3.handleCalled, isFalse);
     });
 
-    test('handleUri hands the handler the provenance and the payload',
-        () async {
-      final handler = MockDeeplinkHandler();
-      manager.registerHandler(handler);
+    test(
+      'handleUri hands the handler the provenance and the payload',
+      () async {
+        final handler = MockDeeplinkHandler();
+        manager.registerHandler(handler);
 
-      await manager.handleUri(
-        Uri.parse('https://uptizm.com/incidents/1'),
-        source: DeeplinkSource.push,
-        payload: {'deep_link': '/incidents/1', 'team_id': 't-9'},
-      );
+        await manager.handleUri(
+          Uri.parse('https://uptizm.com/incidents/1'),
+          source: DeeplinkSource.push,
+          payload: {'deep_link': '/incidents/1', 'team_id': 't-9'},
+        );
 
-      expect(handler.handledSource, DeeplinkSource.push);
-      expect(
-        handler.handledPayload,
-        {'deep_link': '/incidents/1', 'team_id': 't-9'},
-      );
-    });
+        expect(handler.handledSource, DeeplinkSource.push);
+        expect(handler.handledPayload, {
+          'deep_link': '/incidents/1',
+          'team_id': 't-9',
+        });
+      },
+    );
 
     test('handleUri returns false if no handler matches', () async {
       final handler = MockDeeplinkHandler(canHandleValue: false);
@@ -193,8 +199,7 @@ void main() {
       expect(driver.initialLinkCalls, 1);
     });
 
-    test('reset drops the cached initial link the singleton would keep',
-        () async {
+    test('reset drops the cached initial link the singleton would keep', () async {
       final driver = MockDeeplinkDriver(
         initialLink: Uri.parse('https://example.com'),
       );

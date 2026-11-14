@@ -31,10 +31,7 @@ void main() {
       final uri = Uri.parse('https://example.com/test');
 
       expect(handler.canHandle(uri), isTrue);
-      expect(
-        await handler.handle(uri, source: DeeplinkSource.osLink),
-        isTrue,
-      );
+      expect(await handler.handle(uri, source: DeeplinkSource.osLink), isTrue);
     });
 
     test('the contract carries provenance and the payload behind it', () async {

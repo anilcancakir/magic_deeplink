@@ -2,21 +2,11 @@
 
 Flutter deep linking plugin for the Magic Framework. Universal Links (iOS) + App Links (Android) via `app_links` package.
 
-**Version:** 0.1.8 · **Dart:** >=3.6.0 · **Flutter:** >=3.27.0
+**Version:** 1.0.0 · **Dart:** >=3.13.0 · **Flutter:** >=3.47.0
 
 ## Commands
 
-**Host-dispatched via artisan.** Add `MagicDeeplinkArtisanProvider` to your app's artisan providers:
-
-```dart
-// lib/config/artisan.dart
-import 'package:magic_deeplink/src/cli/deeplink_artisan_provider.dart';
-
-List<ArtisanServiceProvider> get artisanProviders => [
-  MagicDeeplinkArtisanProvider(),
-  // ... other providers
-];
-```
+**Host-dispatched via dowel.** `dart run magic:dowel plugin:install magic_deeplink` registers `MagicDeeplinkDowelProvider` in the app's `.dowel/plugins.json`.
 
 Then run:
 
@@ -25,9 +15,9 @@ Then run:
 | `flutter test --coverage` | Run all tests with coverage |
 | `flutter analyze --no-fatal-infos` | Static analysis |
 | `dart format .` | Format all code |
-| `dart run <app>:artisan deeplink:install` | Generate `lib/config/deeplink.dart` in consumer project |
-| `dart run <app>:artisan deeplink:generate --output ./public` | Generate apple-app-site-association & assetlinks.json |
-| `dart run <app>:artisan deeplink:doctor` | Check the install; `--remote` also fetches both association files from the live domain |
+| `dart run magic:dowel deeplink:install` | Generate `lib/config/deeplink.dart` in consumer project |
+| `dart run magic:dowel deeplink:generate --output ./public` | Generate apple-app-site-association & assetlinks.json |
+| `dart run magic:dowel deeplink:doctor` | Check the install; `--remote` also fetches both association files from the live domain |
 
 ## Architecture
 
@@ -43,17 +33,17 @@ lib/
     ├── providers/             # DeeplinkServiceProvider (register + boot)
     ├── exceptions/            # DeeplinkException
     └── cli/                   # Install + Generate commands
-        ├── deeplink_artisan_provider.dart  # ArtisanServiceProvider (no bin entrypoint)
+        ├── deeplink_dowel_provider.dart  # DowelServiceProvider (no bin entrypoint)
         ├── commands/
-        │   ├── install_command.dart        # extends ArtisanInstallCommand, driven by install.yaml
-        │   ├── generate_command.dart       # extends ArtisanCommand
+        │   ├── install_command.dart        # extends DowelInstallCommand, driven by install.yaml
+        │   ├── generate_command.dart       # extends DowelCommand
         │   └── doctor_command.dart         # reads the config + both platform trees; --remote adds the live host
         └── cli.dart                        # Barrel export (provider + commands)
 install.yaml                   # Plugin manifest: config publish, provider/factory injection
 assets/stubs/                  # Stub templates for code generation
 ```
 
-**CLI architecture**: Commands are registered via `MagicDeeplinkArtisanProvider.commands()` (extends `ArtisanServiceProvider`). No bin/ entrypoint: the host app's `artisan.dart` CLI dispatch handles command routing. The `InstallCommand` extends `ArtisanInstallCommand` and is manifest-driven: `install.yaml` specifies what config files to publish and which service provider to inject; the command executes the manifest through the artisan transactional installer.
+**CLI architecture**: Commands are registered via `MagicDeeplinkDowelProvider.commands()` (extends `DowelServiceProvider`). No bin/ entrypoint: the host app's `bin/dispatcher.dart` CLI dispatch handles command routing. The `InstallCommand` extends `DowelInstallCommand` and is manifest-driven: `install.yaml` specifies what config files to publish and which service provider to inject; the command executes the manifest through the dowel transactional installer.
 
 **Data flow:** App launch → `DeeplinkServiceProvider.boot()` → returns early if `deeplink.enabled == false` → creates driver when `driver.isSupported` → listens `onLink` stream → delivers after `endOfFrame` via `manager.handleUri(uri, source: ...)` → first matching handler wins
 

@@ -23,8 +23,8 @@ Under the hood the package delegates all platform stream handling to [`app_links
 <a name="requirements"></a>
 ## Requirements
 
-- **Dart SDK**: 3.6.0 or higher
-- **Flutter**: 3.27.0 or higher
+- **Dart SDK**: 3.13.0 or higher
+- **Flutter**: 3.47.0 or higher
 - **Magic Framework** installed and bootstrapped (`lib/config/app.dart` present)
 
 <a name="installing-the-package"></a>
@@ -40,7 +40,7 @@ Or add it manually to `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  magic_deeplink: ^0.1.8
+  magic_deeplink: ^1.0.0
 ```
 
 Then fetch dependencies:
@@ -52,10 +52,10 @@ flutter pub get
 <a name="running-the-install-command"></a>
 ## Running the Install Command
 
-The command is host-dispatched via `fluttersdk_artisan` (add `MagicDeeplinkArtisanProvider` to your app's `lib/config/artisan.dart`, see [CLAUDE.md](../../CLAUDE.md)). Run it from your project root to scaffold the configuration file and inject the provider automatically:
+The command is host-dispatched via `dowel` (`dart run magic:dowel plugin:install magic_deeplink` registers `MagicDeeplinkDowelProvider` under `.dowel/plugins.json`, see [CLAUDE.md](../../CLAUDE.md)). Run it from your project root to scaffold the configuration file and inject the provider automatically:
 
 ```bash
-dart run <app>:artisan deeplink:install
+dart run magic:dowel deeplink:install
 ```
 
 The command performs the following steps:
@@ -69,13 +69,13 @@ The command performs the following steps:
 > If `lib/config/deeplink.dart` already exists the command skips the write and prints a warning. Pass `--force` to overwrite an existing configuration file.
 
 ```bash
-dart run <app>:artisan deeplink:install --force
+dart run magic:dowel deeplink:install --force
 ```
 
 <a name="registering-the-service-provider"></a>
 ## Registering the Service Provider
 
-If you ran `dart run <app>:artisan deeplink:install`, the provider was already injected. The relevant section of `lib/config/app.dart` will look like this:
+If you ran `dart run magic:dowel deeplink:install`, the provider was already injected. The relevant section of `lib/config/app.dart` will look like this:
 
 ```dart
 import 'package:magic/magic.dart';
@@ -102,8 +102,8 @@ final appConfig = {
 The install command also adds the deeplink config factory to `Magic.init()` in `lib/main.dart`:
 
 ```dart
-import 'package:flutter/material.dart';
 import 'package:magic/magic.dart';
+import 'package:material_ui/material_ui.dart';
 import 'config/app.dart';
 import 'config/deeplink.dart'; // injected by install
 
@@ -207,7 +207,7 @@ An operating system will not hand your app a link until you tell it your app own
 
    The install command applies this key for you (`install.yaml`'s `native.ios.info_plist`), so a fresh `deeplink:install` run needs no manual edit here. Re-check it if your project predates this release, or if something else in your project's `Info.plist` template has since overwritten it.
 
-3. **Host the `apple-app-site-association` file.** Generate it with `dart run <app>:artisan deeplink:generate --output ./public` and upload it to `https://<your-domain>/.well-known/apple-app-site-association`, served over HTTPS with no redirect.
+3. **Host the `apple-app-site-association` file.** Generate it with `dart run magic:dowel deeplink:generate --output ./public/.well-known` (the command writes straight into the output directory) and upload it to `https://<your-domain>/.well-known/apple-app-site-association`, served over HTTPS with no redirect.
 
 <a name="android-intent-filter-and-manifest"></a>
 ### Android: Intent Filter and Manifest
@@ -236,15 +236,15 @@ An operating system will not hand your app a link until you tell it your app own
    <meta-data android:name="flutter_deeplinking_enabled" android:value="false" />
    ```
 
-   This one is **not** applied by `deeplink:install`. Artisan's `XmlEditor` (the shared engine every plugin's `native.android.meta_data` key runs through) inserts `<meta-data>` entries into `<application>`, and Flutter reads this specific key from `<activity>`; automating it through that key would silently write a `<meta-data>` entry Flutter never looks at, passing every check while doing nothing. Add it by hand.
+   This one is **not** applied by `deeplink:install`. dowel's `XmlEditor` (the shared engine every plugin's `native.android.meta_data` key runs through) inserts `<meta-data>` entries into `<application>`, and Flutter reads this specific key from `<activity>`; automating it through that key would silently write a `<meta-data>` entry Flutter never looks at, passing every check while doing nothing. Add it by hand.
 
-3. **Host the `assetlinks.json` file.** Generate it with `dart run <app>:artisan deeplink:generate --output ./public` and upload it to `https://<your-domain>/.well-known/assetlinks.json`. Android verifies it at install time, not at link-click time.
+3. **Host the `assetlinks.json` file.** Generate it with `dart run magic:dowel deeplink:generate --output ./public/.well-known` (the command writes straight into the output directory) and upload it to `https://<your-domain>/.well-known/assetlinks.json`. Android verifies it at install time, not at link-click time.
 
 <a name="verify"></a>
 ## Verify the install before you reach for a device
 
 ```bash
-dart run <app>:artisan deeplink:doctor
+dart run magic:dowel deeplink:doctor
 ```
 
 Every way of getting this install wrong is silent. A `<meta-data>` on the wrong element, a missing `<data>` scheme, an association file that names a different bundle, a provider that never reached `lib/config/app.dart`: none of them throws, none of them logs, and the only symptom is a link that opens the browser. The doctor reads the project's own files and says which prerequisite is actually in place, including the Dart wiring that makes every platform file matter.
@@ -252,7 +252,7 @@ Every way of getting this install wrong is silent. A `<meta-data>` on the wrong 
 Add `--remote` to also fetch both association files from the live domain, which is the half a repo-only check cannot see:
 
 ```bash
-dart run <app>:artisan deeplink:doctor --remote
+dart run magic:dowel deeplink:doctor --remote
 ```
 
 What it can never prove is that a real device matches an incoming link to this app: `swcutil verify` needs root and Android verifies at install time. The last mile is always a real device, and on iOS it must be a **profile or release** build, since iOS refuses to launch a debug Flutter build from a link or from the home screen.
@@ -264,4 +264,4 @@ Now that the plugin is installed and wired up:
 
 - **[Configuration](https://magic.fluttersdk.com/packages/deeplink/getting-started/configuration)**: Learn how to customise paths, schemes, and platform settings.
 - **[Handlers](https://magic.fluttersdk.com/packages/deeplink/basics/handlers)**: Add your own URI handlers with `RouteDeeplinkHandler`.
-- **[CLI Tools](https://magic.fluttersdk.com/packages/deeplink/basics/cli)**: Use `dart run <app>:artisan deeplink:generate` to produce the Apple App Site Association and Android Asset Links files.
+- **[CLI Tools](https://magic.fluttersdk.com/packages/deeplink/basics/cli)**: Use `dart run magic:dowel deeplink:generate` to produce the Apple App Site Association and Android Asset Links files.

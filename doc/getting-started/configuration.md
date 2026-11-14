@@ -15,7 +15,7 @@
 The `magic_deeplink` plugin is configured via a single Dart file at `lib/config/deeplink.dart` in your consumer project. This file is generated automatically when you run the install command, and contains all values required for both runtime deep link handling and server-side asset file generation.
 
 ```bash
-dart run <app>:artisan deeplink:install
+dart run magic:dowel deeplink:install
 ```
 
 The install command scaffolds `lib/config/deeplink.dart` with placeholder values. Replace the placeholders with your real credentials before running your app or generating server-side files.
@@ -229,7 +229,7 @@ await driver.initialize(config.get('deeplink') ?? {});
 The `generate` command reads `lib/config/deeplink.dart` automatically and uses your config values to produce the server-side asset files. CLI flags override config file values when both are present.
 
 ```bash
-dart run <app>:artisan deeplink:generate --output ./public
+dart run magic:dowel deeplink:generate --output ./public
 ```
 
 This creates two files in the specified output directory:
@@ -242,7 +242,7 @@ This creates two files in the specified output directory:
 You can override individual values without editing the config file using CLI flags:
 
 ```bash
-dart run <app>:artisan deeplink:generate \
+dart run magic:dowel deeplink:generate \
   --output ./public \
   --team-id ABCDE12345 \
   --bundle-id com.example.app \

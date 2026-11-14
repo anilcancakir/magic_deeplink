@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'dart:isolate';
 
-import 'package:fluttersdk_artisan/artisan.dart';
+import 'package:dowel/dowel.dart';
 
 /// `deeplink:install`, installs magic_deeplink via the bundled install.yaml
 /// manifest.
@@ -14,11 +14,11 @@ import 'package:fluttersdk_artisan/artisan.dart';
 /// ## Usage
 ///
 /// ```bash
-/// dart run <app>:artisan deeplink:install
-/// dart run <app>:artisan deeplink:install --force
-/// dart run <app>:artisan deeplink:install --dry-run
+/// dart run magic:dowel deeplink:install
+/// dart run magic:dowel deeplink:install --force
+/// dart run magic:dowel deeplink:install --dry-run
 /// ```
-class InstallCommand extends ArtisanInstallCommand {
+class InstallCommand extends DowelInstallCommand {
   @override
   String get signature => 'deeplink:install $baseFlags';
 
@@ -27,7 +27,7 @@ class InstallCommand extends ArtisanInstallCommand {
       'Install magic_deeplink via the bundled manifest (config publish + provider + configFactory inject).';
 
   @override
-  String pluginName(ArtisanContext ctx) => 'magic_deeplink';
+  String pluginName(DowelContext ctx) => 'magic_deeplink';
 
   /// Resolves the absolute path to the bundled install.yaml.
   ///
@@ -54,7 +54,7 @@ class InstallCommand extends ArtisanInstallCommand {
   }
 
   @override
-  Future<int> handle(ArtisanContext ctx) async {
+  Future<int> handle(DowelContext ctx) async {
     // 1. Resolve and parse the manifest.
     final manifestPath = await resolveManifestPath();
     if (manifestPath == null) {
@@ -86,10 +86,19 @@ class InstallCommand extends ArtisanInstallCommand {
     );
 
     // 3. Echo the post_install message on success.
-    if (result is Success && manifest.postInstall.message != null) {
+    if (result is InstallSuccess && manifest.postInstall.message != null) {
       ctx.output.info(manifest.postInstall.message!);
     }
 
-    return result is Success || result is DryRun ? 0 : 1;
+    if (result is InstallConflict) {
+      ctx.output.error(
+        'deeplink:install stopped on ${result.conflicts.length} conflicting '
+        'file(s); review them, then re-run with --force.',
+      );
+    } else if (result is InstallError) {
+      ctx.output.error('deeplink:install failed: ${result.error}');
+    }
+
+    return result is InstallSuccess || result is InstallDryRun ? 0 : 1;
   }
 }

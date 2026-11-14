@@ -7,40 +7,51 @@ void main() {
     late RouteDeeplinkHandler handler;
 
     setUp(() {
-      handler = RouteDeeplinkHandler(paths: [
-        '/monitors/*',
-        '/settings',
-        '/teams/:id',
-      ]);
+      handler = RouteDeeplinkHandler(
+        paths: ['/monitors/*', '/settings', '/teams/:id'],
+      );
     });
 
     test('canHandle matches exact paths', () {
       expect(
-          handler.canHandle(Uri.parse('https://example.com/settings')), isTrue);
-      expect(handler.canHandle(Uri.parse('https://example.com/settings/')),
-          isTrue); // Trailing slash handling
+        handler.canHandle(Uri.parse('https://example.com/settings')),
+        isTrue,
+      );
+      expect(
+        handler.canHandle(Uri.parse('https://example.com/settings/')),
+        isTrue,
+      ); // Trailing slash handling
     });
 
     test('canHandle matches wildcard paths', () {
-      expect(handler.canHandle(Uri.parse('https://example.com/monitors/123')),
-          isTrue);
-      expect(handler.canHandle(Uri.parse('https://example.com/monitors/new')),
-          isTrue);
+      expect(
+        handler.canHandle(Uri.parse('https://example.com/monitors/123')),
+        isTrue,
+      );
+      expect(
+        handler.canHandle(Uri.parse('https://example.com/monitors/new')),
+        isTrue,
+      );
     });
 
     test('canHandle matches parameter paths', () {
       // Simple wildcard matching usually treats :id as * or specific segment
       // For this implementation, we'll assume basic wildcard support or regex
       expect(
-          handler.canHandle(Uri.parse('https://example.com/teams/5')), isTrue);
+        handler.canHandle(Uri.parse('https://example.com/teams/5')),
+        isTrue,
+      );
     });
 
     test('canHandle rejects non-matching paths', () {
       expect(
-          handler.canHandle(Uri.parse('https://example.com/unknown')), isFalse);
+        handler.canHandle(Uri.parse('https://example.com/unknown')),
+        isFalse,
+      );
       expect(
-          handler.canHandle(Uri.parse('https://example.com/settings/profile')),
-          isFalse); // Exact match failed
+        handler.canHandle(Uri.parse('https://example.com/settings/profile')),
+        isFalse,
+      ); // Exact match failed
     });
 
     group('with hosts set', () {
@@ -73,8 +84,9 @@ void main() {
 
       test('rejects an absolute URI carrying an explicit port', () {
         expect(
-          gatedHandler
-              .canHandle(Uri.parse('https://example.com:8443/monitors/5')),
+          gatedHandler.canHandle(
+            Uri.parse('https://example.com:8443/monitors/5'),
+          ),
           isFalse,
         );
       });
@@ -113,8 +125,9 @@ void main() {
 
       test('rejects an absolute URI on a real host', () {
         expect(
-          blankHostsHandler
-              .canHandle(Uri.parse('https://other-app.example/monitors/5')),
+          blankHostsHandler.canHandle(
+            Uri.parse('https://other-app.example/monitors/5'),
+          ),
           isFalse,
         );
       });
@@ -156,15 +169,20 @@ void main() {
       });
     });
 
-    test('handle answers false rather than throwing when navigation fails',
-        () async {
-      // No router is initialised in this unit test, so MagicRoute.to() throws
-      // a StateError inside handle. The handler contract is to never throw
-      // (the manager awaits it from a stream subscription), so it reports the
-      // failure as false instead.
-      final uri = Uri.parse('https://example.com/settings');
+    test(
+      'handle answers false rather than throwing when navigation fails',
+      () async {
+        // No router is initialised in this unit test, so MagicRoute.to() throws
+        // a StateError inside handle. The handler contract is to never throw
+        // (the manager awaits it from a stream subscription), so it reports the
+        // failure as false instead.
+        final uri = Uri.parse('https://example.com/settings');
 
-      expect(await handler.handle(uri, source: DeeplinkSource.osLink), isFalse);
-    });
+        expect(
+          await handler.handle(uri, source: DeeplinkSource.osLink),
+          isFalse,
+        );
+      },
+    );
   });
 }

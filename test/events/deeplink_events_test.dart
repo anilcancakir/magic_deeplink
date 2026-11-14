@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:magic/magic.dart';
 import 'package:magic_deeplink/src/events/deeplink_events.dart';
@@ -52,10 +52,7 @@ void main() {
 
     RouteDeeplinkHandler handlerWith({bool switchAnswer = true}) {
       return RouteDeeplinkHandler(
-        paths: [
-          '/',
-          '/incidents/:id',
-        ],
+        paths: ['/', '/incidents/:id'],
         tenantGate: TenantSwitchGate(
           currentTenantId: () => 'mine',
           switchTenant: (String tenantId) async {
@@ -191,28 +188,31 @@ void main() {
     });
 
     test(
-        'a token in the path never reaches a breadcrumb: the route pattern does',
-        () async {
-      final RouteDeeplinkHandler handler = RouteDeeplinkHandler(
-        paths: ['/invitations/:token/accept'],
-      );
+      'a token in the path never reaches a breadcrumb: the route pattern does',
+      () async {
+        final RouteDeeplinkHandler handler = RouteDeeplinkHandler(
+          paths: ['/invitations/:token/accept'],
+        );
 
-      await handler.handle(
-        Uri.parse('/invitations/s3cret-invite/accept'),
-        source: DeeplinkSource.osLink,
-      );
+        await handler.handle(
+          Uri.parse('/invitations/s3cret-invite/accept'),
+          source: DeeplinkSource.osLink,
+        );
 
-      final String data = events
-          .map((MagicEvent e) => (e as ReportsBreadcrumb).breadcrumbData.values)
-          .expand((Iterable<Object?> values) => values)
-          .join(' ');
+        final String data = events
+            .map(
+              (MagicEvent e) => (e as ReportsBreadcrumb).breadcrumbData.values,
+            )
+            .expand((Iterable<Object?> values) => values)
+            .join(' ');
 
-      expect(data, isNot(contains('s3cret-invite')));
-      expect(
-        (events.first as ReportsBreadcrumb).breadcrumbData['route'],
-        '/invitations/:token/accept',
-      );
-    });
+        expect(data, isNot(contains('s3cret-invite')));
+        expect(
+          (events.first as ReportsBreadcrumb).breadcrumbData['route'],
+          '/invitations/:token/accept',
+        );
+      },
+    );
 
     test('a handler without a gate reports that no tenant was named', () async {
       final RouteDeeplinkHandler handler = RouteDeeplinkHandler(

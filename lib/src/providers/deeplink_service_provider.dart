@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/widgets.dart';
 import 'package:magic/magic.dart';
+
 import '../deeplink_manager.dart';
 import '../drivers/app_links_driver.dart';
 import '../drivers/deeplink_driver.dart';
@@ -25,7 +26,7 @@ class DeeplinkServiceProvider extends ServiceProvider {
   /// so neither the gate below nor the delivery path can be exercised through
   /// it.
   DeeplinkServiceProvider(super.app, {DeeplinkDriver Function()? driverFactory})
-      : _driverFactory = driverFactory ?? AppLinksDriver.new;
+    : _driverFactory = driverFactory ?? AppLinksDriver.new;
 
   /// Builds the driver [boot] wires.
   final DeeplinkDriver Function() _driverFactory;
@@ -160,8 +161,9 @@ class DeeplinkServiceProvider extends ServiceProvider {
       return;
     }
 
-    final DeeplinkDriver? driver =
-        driverName == 'app_links' ? _driverFactory() : null;
+    final DeeplinkDriver? driver = driverName == 'app_links'
+        ? _driverFactory()
+        : null;
 
     // A driver that says it cannot serve this platform is not initialised, not
     // handed to the manager and not subscribed to: the web arm answers false
