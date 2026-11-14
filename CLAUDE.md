@@ -45,7 +45,7 @@ tool/check-docs.py             # Offline docs gate, run by docs-link-check.yml
 
 ## Post-Change Checklist
 
-After ANY source code change, sync **before committing**. A change is not done while one of these is stale:
+After any source code change, sync **before committing**. A change is not done while one of these is stale:
 
 1. **`CHANGELOG.md`**: Add entry under `[Unreleased]` section
 2. **`README.md`, `llms.txt` and the `doc/` pages**: Update if features, API, or usage changes; run `python3 tool/check-docs.py`
@@ -77,7 +77,7 @@ Every feature, fix, or refactor goes through red-green-refactor: write a failing
 | Putting the concrete path, query or a payload value in a breadcrumb | A link can carry a token in any of them; events carry the matched pattern only |
 | Calling `Log` bare in a handler or the provider | `Log` throws when nothing bound `log`; ask `Magic.bound('log')` first |
 | Documenting a `Deeplink` facade or a `scheme` config key | Neither exists: the entry point is `DeeplinkManager()` and nothing reads `scheme` |
-| Relative paths in `pubspec_overrides.yaml` | Use ABSOLUTE ones. `.worktreeinclude` copies that file into worktrees under `.claude/worktrees/<slug>`, where `../magic` resolves to a directory that does not exist |
+| Relative paths in `pubspec_overrides.yaml` | Use absolute ones. `.worktreeinclude` copies that file into worktrees under `.claude/worktrees/<slug>`, where `../magic` resolves to a directory that does not exist |
 
 ## Release
 
