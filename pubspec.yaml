@@ -1,6 +1,6 @@
 name: magic_deeplink
 description: "Open the right Magic route from Universal Links, App Links and push taps: config-driven handlers plus a CLI that generates the association files."
-version: 1.0.0
+version: 1.0.1
 homepage: https://anilcancakir.com/magic/deeplink
 repository: https://github.com/anilcancakir/magic_deeplink
 issue_tracker: https://github.com/anilcancakir/magic_deeplink/issues

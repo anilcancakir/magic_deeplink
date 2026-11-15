@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-11-15
+
 ### Changed
 - **The package page is `https://anilcancakir.com/magic/deeplink` and every documentation link sits under `https://anilcancakir.com/magic/docs/deeplink`.** (`pubspec.yaml`, `README.md`, `llms.txt`, `doc/`)
 - **The CLI messages no longer carry em dashes.** `deeplink:generate` and `deeplink:doctor` use a colon or a comma instead. (`lib/src/cli/commands/generate_command.dart`, `lib/src/cli/commands/doctor_command.dart`)
