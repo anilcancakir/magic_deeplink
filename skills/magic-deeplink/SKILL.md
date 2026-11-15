@@ -1,7 +1,7 @@
 ---
 name: magic-deeplink
 description: "Route Universal Links, App Links and tapped pushes to Magic routes with the magic_deeplink handler chain."
-version: 1.0.0
+version: 1.0.1
 when_to_use: "Use when code imports package:magic_deeplink or touches DeeplinkManager, RouteDeeplinkHandler, the deeplink config or a deeplink: command."
 ---
 

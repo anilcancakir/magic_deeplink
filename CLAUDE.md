@@ -4,7 +4,7 @@
 
 Deep linking for the Magic Framework: `DeeplinkServiceProvider` wires `app_links` (Universal Links, App Links) into `DeeplinkManager`, a driver plus a first-match handler chain; `RouteDeeplinkHandler` maps a path onto a route with `MagicRoute.to`; tapped pushes from `magic_notifications` enter the same chain; the `deeplink:install`, `deeplink:generate` and `deeplink:doctor` dowel commands scaffold the config, write the association files and check the install.
 
-**Version:** 1.0.0 · **Dart:** >=3.13.0 · **Flutter:** >=3.47.0 · **Requires:** `magic` ^1.0.0
+**Version:** 1.0.1 · **Dart:** >=3.13.0 · **Flutter:** >=3.47.0 · **Requires:** `magic` ^1.0.0
 
 ## Commands
 
