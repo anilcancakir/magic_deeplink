@@ -4,17 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
-### Added
-- **`llms.txt`.** A plain-text summary of the API, the platforms and the rules for an AI coding agent. (`llms.txt`)
-- **The `magic-deeplink` agent skill.** Install it with `npx skills add anilcancakir/magic_deeplink`. (`skills/magic-deeplink/`)
-- **A runnable `example/`.** A small app that registers a `RouteDeeplinkHandler`. (`example/`)
-
 ### Changed
-- **The package page is `https://anilcancakir.com/magic/deeplink` and every documentation link sits under `https://anilcancakir.com/magic/docs/deeplink`.** The pub.dev page carries it from the next release. (`pubspec.yaml`, `README.md`, `llms.txt`, `doc/`)
-- **The pub.dev listing names the new home.** The homepage is `https://anilcancakir.com/magic/deeplink`, the repository and issue tracker sit under `anilcancakir`, the separate documentation link is gone, and the description leads with what the package does. (`pubspec.yaml`)
-- **The README and the `doc/` pages are rewritten.** Each follows the standard page shape, and a checker in `tool/` keeps the pages consistent. (`README.md`, `doc/`, `tool/check-docs.py`)
-- **The post-install message points `deeplink:generate` at `public/.well-known` and lists `deeplink:doctor`.** It said `--output ./public`, which writes the association files where the doctor does not look. Its handler sample now sets `hosts`, as the README does. (`install.yaml`)
-- **The install stub no longer writes `'scheme': 'https'`.** Nothing in the package reads that key, so a project that wants it gone can delete it from `lib/config/deeplink.dart`; new installs simply do not get it. (`assets/stubs/install/deeplink_config.stub`)
+- **The package page is `https://anilcancakir.com/magic/deeplink` and every documentation link sits under `https://anilcancakir.com/magic/docs/deeplink`.** (`pubspec.yaml`, `README.md`, `llms.txt`, `doc/`)
 - **The CLI messages no longer carry em dashes.** `deeplink:generate` and `deeplink:doctor` use a colon or a comma instead. (`lib/src/cli/commands/generate_command.dart`, `lib/src/cli/commands/doctor_command.dart`)
 - **The pubspec comment on the `magic` floor names the current reason only.** (`pubspec.yaml`)
 - **The agent skill listing is shorter.** (`skills/magic-deeplink/`)
@@ -28,11 +19,20 @@ All notable changes to this project will be documented in this file.
 
 ## [1.0.0] - 2026-11-14
 
+### Added
+- **`llms.txt`.** A plain-text summary of the API, the platforms and the rules for an AI coding agent. (`llms.txt`)
+- **The `magic-deeplink` agent skill.** Install it with `npx skills add anilcancakir/magic_deeplink`. (`skills/magic-deeplink/`)
+- **A runnable `example/`.** A small app that registers a `RouteDeeplinkHandler`. (`example/`)
+
 ### Changed
 - **First stable release.** Version 1.0.0 replaces the planned 0.2.0 and requires `magic ^1.0.0` and `dowel ^1.0.0`; no API change beyond what is listed below.
 - **BREAKING: the CLI moved from `fluttersdk_artisan` to `dowel`.** `MagicDeeplinkArtisanProvider` is now `MagicDeeplinkDowelProvider` (file `deeplink_dowel_provider.dart`), still exported from `package:magic_deeplink/cli.dart` and `package:magic_deeplink/magic_deeplink.dart`. Re-run `dart run magic:dowel plugin:install magic_deeplink` to register it under `.dowel/`. (`lib/cli.dart`, `lib/src/cli/`, `install.yaml`, `pubspec.yaml`)
 - **BREAKING: the SDK floor is Dart `>=3.13.0` and Flutter `>=3.47.0`.** Inherited from `magic` 1.0.0. Two tests import `material_ui`, so it is a dev dependency. (`pubspec.yaml`, `test/events/deeplink_events_test.dart`, `test/handlers/tenant_switch_gate_test.dart`)
 - **Direct dependencies move to their latest releases.** `app_links` `^7.0.0` to `^7.2.2`, `dowel` `^1.0.0`, `test` `^1.25.0` to `^1.32.0`. (`pubspec.yaml`)
+- **The pub.dev listing names the new home.** The repository and issue tracker sit under `anilcancakir`, the separate documentation link is gone, and the description leads with what the package does. (`pubspec.yaml`)
+- **The README and the `doc/` pages are rewritten.** Each follows the standard page shape, and a checker in `tool/` keeps the pages consistent. (`README.md`, `doc/`, `tool/check-docs.py`)
+- **The post-install message points `deeplink:generate` at `public/.well-known` and lists `deeplink:doctor`.** It said `--output ./public`, which writes the association files where the doctor does not look. Its handler sample now sets `hosts`, as the README does. (`install.yaml`)
+- **The install stub no longer writes `'scheme': 'https'`.** Nothing in the package reads that key, so a project that wants it gone can delete it from `lib/config/deeplink.dart`; new installs simply do not get it. (`assets/stubs/install/deeplink_config.stub`)
 
 ## [0.1.8] - 2026-10-14
 
