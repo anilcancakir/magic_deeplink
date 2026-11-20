@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/anilcancakir/magic_deeplink/master/.github/magic-logo.svg" width="120" alt="Magic Deeplink Logo" />
+  <img src="https://raw.githubusercontent.com/anilcancakir/magic_deeplink/master/.github/logo.png" width="120" alt="Magic Deeplink logo" />
 </p>
 
 <h1 align="center">Magic Deeplink</h1>
