@@ -19,6 +19,7 @@ A driver turns a platform's link mechanism into a uniform `Stream<Uri>` for `Dee
 | Android | `true` | App Links (HTTPS intent filter) |
 | iOS | `true` | Universal Links (`apple-app-site-association`) |
 | macOS | `true` | Universal Links; the install and the doctor do not cover macOS |
+| tvOS | `false` | None; `app_links` has no tvOS half, and flutter-tvos reports an Apple TV as iOS |
 | Web | `false` | None; see [Web, in detail](#web) |
 | Windows, Linux | `false` | None |
 
@@ -60,7 +61,7 @@ export 'app_links_driver_stub.dart'
     if (dart.library.io) 'app_links_driver_io.dart';
 ```
 
-The `dart:io` arm wraps the [`app_links`](https://pub.dev/packages/app_links) package and is the only arm that talks to a platform channel. It answers `isSupported` from `Platform.isAndroid || Platform.isIOS || Platform.isMacOS`, creates its `AppLinks` instance in `initialize`, and takes `getInitialLink()` and `onLink` from `app_links`. The cold-start link is also the first emission of `onLink`.
+The `dart:io` arm wraps the [`app_links`](https://pub.dev/packages/app_links) package and is the only arm that talks to a platform channel. It answers `isSupported` false on tvOS (`MagicPlatform.isTvOS`, asked first) and otherwise from `Platform.isAndroid || Platform.isIOS || Platform.isMacOS`, creates its `AppLinks` instance in `initialize`, and takes `getInitialLink()` and `onLink` from `app_links`. The cold-start link is also the first emission of `onLink`.
 
 The web arm and the stub arm, which no shipped build target resolves to, are inert: `isSupported` is `false`, `getInitialLink()` returns `null`, `onLink` is `Stream<Uri>.empty()`, and `initialize` and `dispose` do nothing.
 
