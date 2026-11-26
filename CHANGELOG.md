@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- **The `app_links` driver reports itself unsupported on tvOS.** tvOS reports itself as iOS, `app_links` has no tvOS half, and the unguarded link stream threw, so `isSupported` now asks `MagicPlatform.isTvOS` first and the provider skips the driver. `AppLinksDriver` takes optional `isIOS`, `isAndroid` and `isMacOS` arguments so a test can reach every answer from any host. Behaviour on iOS, Android, macOS and the web is unchanged. (`lib/src/drivers/app_links_driver_io.dart`)
+
 ### Changed
 
 - **The README shows the plugin's own logo instead of the Magic logo.** `.github/logo.png`, a 512 pixel PNG of the mark the docs site serves, replaces `.github/magic-logo.svg`. (`README.md`, `.github/`)
