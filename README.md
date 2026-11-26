@@ -31,7 +31,7 @@
 | Install | `flutter pub add magic_deeplink`, then `dart run magic:dowel plugin:install magic_deeplink` |
 | Import | `package:magic_deeplink/magic_deeplink.dart` |
 | Entry points | `DeeplinkServiceProvider` (wiring), `DeeplinkManager()` (the singleton), `RouteDeeplinkHandler`, `TenantSwitchGate`, `DeeplinkHandler` (the contract), `DeeplinkDriver`, `AppLinksDriver`; `deeplink:install`, `deeplink:generate`, `deeplink:doctor` (CLI) |
-| Platforms | Links are delivered on Android, iOS and macOS. Web, Windows and Linux wire no driver; on web a tapped push still routes. The CLI covers iOS and Android only. |
+| Platforms | Links are delivered on Android, iOS and macOS. tvOS, web, Windows and Linux wire no driver; on web a tapped push still routes. The CLI covers iOS and Android only. |
 | Requires | Dart >=3.13, Flutter >=3.47, `magic` ^1.0.0 |
 | Dependencies | `magic`, `app_links`, `dowel`, `args` |
 | License | MIT |
@@ -130,7 +130,7 @@ Failure modes:
 | The router is not built yet, or navigation throws | `RouteDeeplinkHandler.handle` logs through `Log` when a `log` binding exists and answers `false`. |
 | A custom handler throws | The manager does not catch. The provider logs the error and the link is lost. |
 | `deeplink.driver` is not `'app_links'` | No driver and no link subscription. The push bridge still runs. |
-| The platform is web, Windows or Linux | `AppLinksDriver.isSupported` is `false`, no driver is set on the manager and nothing is subscribed. |
+| The platform is tvOS, web, Windows or Linux | `AppLinksDriver.isSupported` is `false`, no driver is set on the manager and nothing is subscribed. |
 
 ## Write your own handler
 

@@ -54,7 +54,7 @@ The install does not register a handler and does not finish the native setup (iO
 
 ## Platforms
 
-- `AppLinksDriver.isSupported` is true on Android, iOS and macOS and false on web, Windows and Linux. Where it is false the provider sets no driver on the manager and subscribes to nothing.
+- `AppLinksDriver.isSupported` is true on Android, iOS and macOS and false on tvOS, web, Windows and Linux. Where it is false the provider sets no driver on the manager and subscribes to nothing.
 - iOS and Android are covered by `deeplink:install`, `deeplink:doctor` and `deeplink:generate`. The install sets `FlutterDeepLinkingEnabled` to `false` in `Info.plist`; it cannot place the Android `flutter_deeplinking_enabled` meta-data inside `<activity>`, so that one is by hand.
 - macOS is wired by the provider and covered by nothing else: the entitlement is yours to add and `doctor` does not inspect it.
 - Web: the driver is inert, because GoRouter owns the address bar. Address-bar links need `routing.url_strategy` set to `'path'` and a host rewrite of unknown paths to `index.html`. A tapped push with the tab open still routes through the push bridge, which sits outside the `isSupported` gate.
