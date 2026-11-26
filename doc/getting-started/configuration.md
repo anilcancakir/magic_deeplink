@@ -86,9 +86,9 @@ The `'driver'` key names the platform abstraction that receives incoming links:
 
 | Value | Package | Platforms |
 |:------|:--------|:----------|
-| `'app_links'` | `app_links` | Android, iOS and macOS. Web, Windows and Linux report the driver as unsupported. |
+| `'app_links'` | `app_links` | Android, iOS and macOS. tvOS, web, Windows and Linux report the driver as unsupported. |
 
-`DeeplinkServiceProvider.boot()` creates `AppLinksDriver` for `'app_links'` and nothing for any other value, so a different name wires no driver and no link subscription. The provider then checks `driver.isSupported` before wiring further: on web, Windows and Linux no driver is set on the manager and no subscription is created, and `'driver': 'app_links'` stays the correct value on every platform. See [Drivers](../basics/drivers.md).
+`DeeplinkServiceProvider.boot()` creates `AppLinksDriver` for `'app_links'` and nothing for any other value, so a different name wires no driver and no link subscription. The provider then checks `driver.isSupported` before wiring further: on tvOS, web, Windows and Linux no driver is set on the manager and no subscription is created, and `'driver': 'app_links'` stays the correct value on every platform. See [Drivers](../basics/drivers.md).
 
 > [!NOTE]
 > `'enabled'` gates all of this. `boot()` returns immediately when `Config.get<bool>('deeplink.enabled') == false`, which skips the driver, the link subscription and the push bridge regardless of `'driver'`.

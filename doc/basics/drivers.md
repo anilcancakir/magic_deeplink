@@ -86,7 +86,7 @@ Future<void> main() async {
 <a name="platform-support"></a>
 ### Platform Support
 
-On Android, iOS and macOS the barrel resolves to the `dart:io` arm. On Windows and Linux it resolves to the same arm, whose `Platform` check answers `false`, so the provider wires nothing there either. Native setup per platform is in [Installation](../getting-started/installation.md#platform-setup).
+On Android, iOS and macOS the barrel resolves to the `dart:io` arm. On Windows and Linux it resolves to the same arm, whose `Platform` check answers `false`, and so does tvOS, where the `MagicPlatform.isTvOS` check comes first, so the provider wires nothing there either. Native setup per platform is in [Installation](../getting-started/installation.md#platform-setup).
 
 <a name="web"></a>
 ### Web, in detail
